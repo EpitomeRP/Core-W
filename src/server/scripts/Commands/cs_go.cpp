@@ -48,6 +48,9 @@ public:
             { "trigger",   rbac::RBAC_PERM_COMMAND_GO_TRIGGER,   false, &HandleGoTriggerCommand,   "", NULL },
             { "zonexy",    rbac::RBAC_PERM_COMMAND_GO_ZONEXY,    false, &HandleGoZoneXYCommand,    "", NULL },
             { "xyz",       rbac::RBAC_PERM_COMMAND_GO_XYZ,       false, &HandleGoXYZCommand,       "", NULL },
+			{ "z", rbac::RBAC_PERM_COMMAND_GO_XYZ, false, &HandleGoZCommand, "", NULL },
+			{ "x", rbac::RBAC_PERM_COMMAND_GO_XYZ, false, &HandleGoXCommand, "", NULL },
+			{ "y", rbac::RBAC_PERM_COMMAND_GO_XYZ, false, &HandleGoYCommand, "", NULL },
             { "ticket",    rbac::RBAC_PERM_COMMAND_GO_TICKET,    false, &HandleGoTicketCommand,    "", NULL },
             { "",          rbac::RBAC_PERM_COMMAND_GO,           false, &HandleGoXYZCommand,       "", NULL },
             { NULL,        0,                              false, NULL,                      "", NULL }
@@ -60,6 +63,114 @@ public:
         };
         return commandTable;
     }
+
+	static bool HandleGoZCommand(ChatHandler* handler, char const* args)
+	{
+		if (!*args)
+			return false;
+
+		Player* player = handler->GetSession()->GetPlayer();
+
+		char* goZ = strtok((char*)args, " ");
+
+		float z = player->GetPositionZ();
+		float z_add;
+		float x = player->GetPositionX();
+		float y = player->GetPositionY();
+		float ort = player->GetOrientation();
+		uint32 mapId = player->GetMapId();
+
+		if (goZ)
+		{
+			z_add = (float)atof(goZ);
+			z = z + z_add;
+		}
+
+		// stop flight if need
+		if (player->IsInFlight())
+		{
+			player->GetMotionMaster()->MovementExpired();
+			player->CleanupAfterTaxiFlight();
+		}
+		// save only in non-flight case
+		else
+			player->SaveRecallPosition();
+
+		player->TeleportTo(mapId, x, y, z, ort);
+		return true;
+	}
+
+	static bool HandleGoXCommand(ChatHandler* handler, char const* args)
+	{
+		if (!*args)
+			return false;
+
+		Player* player = handler->GetSession()->GetPlayer();
+
+		char* goX = strtok((char*)args, " ");
+
+		float z = player->GetPositionZ();
+		float x_add;
+		float x = player->GetPositionX();
+		float y = player->GetPositionY();
+		float ort = player->GetOrientation();
+		uint32 mapId = player->GetMapId();
+
+		if (goX)
+		{
+			x_add = (float)atof(goX);
+			x = x + x_add;
+		}
+
+		// stop flight if need
+		if (player->IsInFlight())
+		{
+			player->GetMotionMaster()->MovementExpired();
+			player->CleanupAfterTaxiFlight();
+		}
+		// save only in non-flight case
+		else
+			player->SaveRecallPosition();
+
+		player->TeleportTo(mapId, x, y, z, ort);
+		return true;
+	}
+
+	static bool HandleGoYCommand(ChatHandler* handler, char const* args)
+	{
+		if (!*args)
+			return false;
+
+		Player* player = handler->GetSession()->GetPlayer();
+
+		char* goY = strtok((char*)args, " ");
+
+		float z = player->GetPositionZ();
+		float y_add;
+		float x = player->GetPositionX();
+		float y = player->GetPositionY();
+		float ort = player->GetOrientation();
+		uint32 mapId = player->GetMapId();
+
+		if (goY)
+		{
+			y_add = (float)atof(goY);
+			y = y + y_add;
+		}
+
+		// stop flight if need
+		if (player->IsInFlight())
+		{
+			player->GetMotionMaster()->MovementExpired();
+			player->CleanupAfterTaxiFlight();
+		}
+		// save only in non-flight case
+		else
+			player->SaveRecallPosition();
+
+		player->TeleportTo(mapId, x, y, z, ort);
+		return true;
+	}
 
     /** \brief Teleport the GM to the specified creature
     *
