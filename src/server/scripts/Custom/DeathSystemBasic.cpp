@@ -1,4 +1,3 @@
-#include "ScriptPCH.h"
 #include "Chat.h"
 #include "World.h"
 #include "AccountMgr.h"
@@ -6,6 +5,7 @@
 #include "ObjectAccessor.h"
 #include "ObjectMgr.h"
 #include "Player.h"
+#include "SpellHistory.h"
 #include "ScriptMgr.h"
 #include <sstream>
 
@@ -49,11 +49,12 @@ public:
 				{
 				case BAN_SUCCESS:
 				{
+					target->KillPlayer();
 					handler->PSendSysMessage(LANG_BAN_YOUPERMBANNED, name.c_str(), reasonStr);
 					std::stringstream message;
 					if (WorldSession* session = handler->GetSession())
 						name1 = session->GetPlayer()->GetName();
-					message << "Player " << name << " has been executed by " << name1;
+					message << "Player " << name << " has been executed by " << name1 << ".";
 					sWorld->SendGMText(LANG_GM_ANNOUNCE_COLOR, name1.c_str(), message.str().c_str());
 					break;
 				}
@@ -115,26 +116,27 @@ public:
 
 		void Absorb(AuraEffect* aurEff, DamageInfo & dmgInfo, uint32 & absorbAmount)
 		{
-			Unit* victim = GetTarget();
+			Player *victim = ((Player *)GetTarget());
+			SpellHistory *spellhistory = victim->GetSpellHistory();
 			int32 remainingHealth = victim->GetHealth() - dmgInfo.GetDamage();
 			uint32 allowedHealth = victim->CountPctFromMaxHealth(3);
-			if (victim->ToPlayer()->duel != NULL)
+			if (victim->duel != NULL)
 				return;
 
 			// If damage kills us
-			if (remainingHealth <= 0 && !victim->ToPlayer()->HasSpellCooldown(SPELL_EXECUTE_CD))
+			if (remainingHealth <= 0 && !spellhistory->HasCooldown(SPELL_EXECUTE_CD))
 			{
 				// Cast healing spell, completely avoid damage
 				absorbAmount = dmgInfo.GetDamage();
 				int32 healAmount = int32(victim->CountPctFromMaxHealth(uint32(healPct)));
 				victim->CastCustomSpell(victim, SPELL_EXECUTE_HEAL, &healAmount, NULL, NULL, true, NULL, aurEff);
-				victim->ToPlayer()->AddSpellCooldown(SPELL_EXECUTE_HEAL, 0, time(NULL) + 120);
+				spellhistory->AddCooldown(SPELL_EXECUTE_HEAL, 0, std::chrono::seconds(120));
 				victim->AddAura(SPELL_EXECUTE_STUN, victim);
-				victim->ToPlayer()->AddSpellCooldown(SPELL_EXECUTE_CD, 0, time(NULL) + 600);
-				victim->ToPlayer()->AddSpellCooldown(SPELL_EXECUTE_STUN, 0, time(NULL) + 600);
+				spellhistory->AddCooldown(SPELL_EXECUTE_CD, 0, std::chrono::seconds(600));
+				spellhistory->AddCooldown(SPELL_EXECUTE_STUN, 0, std::chrono::seconds(600));
 				victim->AddAura(SPELL_EXECUTE_CD, victim);
 				std::stringstream message;
-				message << "Player " << victim->ToPlayer()->GetName() << " has been stunned.";
+				message << "Player " << victim->GetName() << " has been stunned.";
 				sWorld->SendGMText(LANG_GM_ANNOUNCE_COLOR, victim->GetName().c_str(), message.str().c_str());
 			}
 		}
