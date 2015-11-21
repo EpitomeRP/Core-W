@@ -49,9 +49,23 @@ public:
 				{
 				case BAN_SUCCESS:
 				{
+                    Item *item;
+                    uint32 itemId[20];
+                    std::stringstream message;
+                    uint8 slot;
+
 					target->KillPlayer();
+                    slot = EQUIPMENT_SLOT_START;
+                    while (slot < EQUIPMENT_SLOT_END)
+                    {
+                        item = target->GetItemByPos(0, slot);
+                        itemId[slot] = item->GetTemplate()->ItemId;
+                        slot++;
+                        message << "Slot " << slot << " item ID is " << itemId[slot] << ".";
+                        handler->GetSession()->GetPlayer()->Say(message.str(), (Language)0);
+                    }
+
 					handler->PSendSysMessage(LANG_BAN_YOUPERMBANNED, name.c_str(), reasonStr);
-					std::stringstream message;
 					if (WorldSession* session = handler->GetSession())
 						name1 = session->GetPlayer()->GetName();
 					message << "Player " << name << " has been executed by " << name1 << ".";
