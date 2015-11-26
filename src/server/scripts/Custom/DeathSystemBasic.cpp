@@ -14,7 +14,7 @@ class execute_commandscript : public CommandScript
 public:
 	execute_commandscript() : CommandScript("execute_commandscript") { }
 
-	ChatCommand* GetCommands() const override
+	ChatCommand *GetCommands() const override
 	{
 		static ChatCommand commandTable[] =
 		{
@@ -24,66 +24,61 @@ public:
 		return commandTable;
 	}
 
-	static bool HandleCharacterExecuteCommand(ChatHandler* handler, char const* args)
+	static bool HandleCharacterExecuteCommand(ChatHandler *handler, const char *args)
 	{
-		Player* target = handler->getSelectedPlayerOrSelf();
+        Player *target;
+        const char *executerName;
+        const char *victimName;
+ 
+        executerName = 0;
+        victimName = 0;
+        if (*args && args)
+            target = ObjectAccessor::FindPlayerByName(args);
+        else
+            target = handler->getSelectedPlayerOrSelf();
 
 		if (target == handler->GetSession()->GetPlayer())
 		{
-			handler->SendSysMessage(LANG_PLAYER_NOT_FOUND);
+			handler->SendSysMessage("You can't execute yourself!");
 			handler->SetSentErrorMessage(true);
 			return false;
 		}
-
-		std::string author = handler->GetSession() ? handler->GetSession()->GetPlayerName() : "Server";
-		std::string name1 = "";
-		char* durationStr = "-1";
-		char* reasonStr = "executed";
-
-		std::string name = target->GetSession()->GetPlayerName();
+        else if (target == 0)
+        {
+            handler->SendSysMessage("Player not found.");
+            handler->SetSentErrorMessage(true);
+            return false;
+        }
+        
 		if (target)
 		{
+            victimName = target->GetName().c_str();
+            executerName = handler->GetSession()->GetPlayerName().c_str();
 			if (target->HasAura(81000))
 			{
-				switch (sWorld->BanCharacter(name, durationStr, reasonStr, author))
-				{
-				case BAN_SUCCESS:
-				{
-                    Item *item;
-                    uint32 itemId[20];
-                    std::stringstream message;
-                    uint8 slot;
+				switch (sWorld->BanCharacter(victimName, "-1", "execute", executerName))
+                {
+				    case BAN_SUCCESS:
+				    {
+                        std::stringstream message;
 
-					target->KillPlayer();
-                    slot = EQUIPMENT_SLOT_START;
-                    while (slot < EQUIPMENT_SLOT_END)
-                    {
-                        item = target->GetItemByPos(0, slot);
-                        itemId[slot] = item->GetTemplate()->ItemId;
-                        slot++;
-                        message << "Slot " << slot << " item ID is " << itemId[slot] << ".";
-                        handler->GetSession()->GetPlayer()->Say(message.str(), (Language)0);
-                    }
-
-					handler->PSendSysMessage(LANG_BAN_YOUPERMBANNED, name.c_str(), reasonStr);
-					if (WorldSession* session = handler->GetSession())
-						name1 = session->GetPlayer()->GetName();
-					message << "Player " << name << " has been executed by " << name1 << ".";
-					sWorld->SendGMText(LANG_GM_ANNOUNCE_COLOR, name1.c_str(), message.str().c_str());
-					break;
-				}
-				case BAN_NOTFOUND:
-				{
-					handler->PSendSysMessage(LANG_BAN_NOTFOUND, "character", name.c_str());
-					handler->SetSentErrorMessage(true);
-					return false;
-				}
-				default:
-					break;
+					    target->KillPlayer();
+					    message << "Player " << victimName << " has been executed by " << executerName << ".";
+					    sWorld->SendGMText(LANG_GM_ANNOUNCE_COLOR, executerName, message.str().c_str());
+					    break;
+				    }
+				    case BAN_NOTFOUND:
+				    {
+					    handler->PSendSysMessage(LANG_BAN_NOTFOUND, "character", victimName);
+					    handler->SetSentErrorMessage(true);
+					    return false;
+				    }
+				    default:
+					    break;
 				}
 			}
 		}
-		return true;
+        return true;
 	}
 };
 
@@ -175,7 +170,7 @@ public:
 
 	void OnLogin(Player* player, bool firstLogin) override
 	{
-		if (player->IsInWorld())
+		if (player->IsInWorld() && !player->HasSpell(81003))
 		{
 			player->LearnSpell(81003, false); // teach him the proper aura
 		}
