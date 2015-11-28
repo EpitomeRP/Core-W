@@ -16,6 +16,7 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <menu.h>
 #include "Player.h"
 #include "AccountMgr.h"
 #include "AchievementMgr.h"
@@ -5144,21 +5145,21 @@ Corpse* Player::CreateCorpse()
     corpse->SetUInt32Value(CORPSE_FIELD_BYTES_2, _cfb2);
 
     uint32 flags = CORPSE_FLAG_UNK2;
+    /*flags |= CORPSE_FLAG_LOOTABLE;*/
     if (HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_HIDE_HELM))
         flags |= CORPSE_FLAG_HIDE_HELM;
     if (HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_HIDE_CLOAK))
         flags |= CORPSE_FLAG_HIDE_CLOAK;
-    if (InBattleground() && !InArena())
-        flags |= CORPSE_FLAG_LOOTABLE;                      // to be able to remove insignia
     corpse->SetUInt32Value(CORPSE_FIELD_FLAGS, flags);
-
     corpse->SetUInt32Value(CORPSE_FIELD_DISPLAY_ID, GetNativeDisplayId());
-
     corpse->SetUInt32Value(CORPSE_FIELD_GUILD, GetGuildId());
+    corpse->SetUInt32Value(CORPSE_FIELD_DYNAMIC_FLAGS, CORPSE_DYNFLAG_LOOTABLE);
+    corpse->lootForBody = 1;
 
     uint32 iDisplayID;
     uint32 iIventoryType;
     uint32 _cfi;
+    LootStoreItem *lootstoreItem = new LootStoreItem(0, 0, 0.0f, 0, 0, 0, 0, 0);
     for (uint8 i = 0; i < EQUIPMENT_SLOT_END; i++)
     {
         if (m_items[i])
@@ -5168,12 +5169,17 @@ Corpse* Player::CreateCorpse()
 
             _cfi = iDisplayID | (iIventoryType << 24);
             corpse->SetUInt32Value(CORPSE_FIELD_ITEM + i, _cfi);
+            lootstoreItem->itemid = m_items[i]->GetTemplate()->ItemId;
+            lootstoreItem->reference = 0;
+            lootstoreItem->chance = 100.0f;
+            lootstoreItem->lootmode = 0;
+            lootstoreItem->needs_quest = 0;
+            lootstoreItem->groupid = 0;
+            lootstoreItem->mincount = 1;
+            lootstoreItem->maxcount = 1;
+            corpse->loot.AddItem(*lootstoreItem);
         }
     }
-
-    // we do not need to save corpses for BG/arenas
-    if (!GetMap()->IsBattlegroundOrArena())
-        corpse->SaveToDB();
 
     // register for player, but not show
     GetMap()->AddCorpse(corpse);
@@ -8779,7 +8785,7 @@ void Player::SendLoot(ObjectGuid guid, LootType loot_type)
     {
         Corpse* bones = ObjectAccessor::GetCorpse(*this, guid);
 
-        if (!bones || !(loot_type == LOOT_CORPSE || loot_type == LOOT_INSIGNIA) || bones->GetType() != CORPSE_BONES)
+        if (!bones || !(loot_type == LOOT_CORPSE || loot_type == LOOT_INSIGNIA))
         {
             SendLootRelease(guid);
             return;
@@ -8800,10 +8806,12 @@ void Player::SendLoot(ObjectGuid guid, LootType loot_type)
             bones->loot.gold = uint32(urand(50, 150) * 0.016f * std::pow(float(pLevel) / 5.76f, 2.5f) * sWorld->getRate(RATE_DROP_MONEY));
         }
 
+        /* Anyone can loot the corpse
         if (bones->lootRecipient != this)
             permission = NONE_PERMISSION;
         else
-            permission = OWNER_PERMISSION;
+         */
+        permission = OWNER_PERMISSION;
     }
     else
     {

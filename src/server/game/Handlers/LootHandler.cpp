@@ -228,7 +228,7 @@ void WorldSession::HandleLootOpcode(WorldPacket& recvData)
     recvData >> guid;
 
     // Check possible cheat
-    if (!GetPlayer()->IsAlive() || !guid.IsCreatureOrVehicle())
+    if (!GetPlayer()->IsAlive() || (!guid.IsCreatureOrVehicle() && !guid.IsCorpse()))
         return;
 
     GetPlayer()->SendLoot(guid, LOOT_CORPSE);
