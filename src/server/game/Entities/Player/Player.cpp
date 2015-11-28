@@ -5179,6 +5179,47 @@ Corpse* Player::CreateCorpse()
             corpse->loot.AddItem(*lootstoreItem);
         }
     }
+    /* Using this variable as iterator */
+    iDisplayID = 0;
+    lootstoreItem->itemid = 100001;
+    while (GetItemByEntry(100001))
+    {
+        iDisplayID++;
+        DestroyItemCount(lootstoreItem->itemid, 1, 1, 0);
+    };
+    if (iDisplayID)
+    {
+        lootstoreItem->mincount = iDisplayID;
+        lootstoreItem->maxcount = iDisplayID;
+        corpse->loot.AddItem(*lootstoreItem);
+        iDisplayID = 0;
+    }
+    lootstoreItem->itemid = 100002;
+    while (GetItemByEntry(100002))
+    {
+        iDisplayID++;
+        DestroyItemCount(lootstoreItem->itemid, 1, 1, 0);
+    };
+    if (iDisplayID)
+    {
+        lootstoreItem->mincount = iDisplayID;
+        lootstoreItem->maxcount = iDisplayID;
+        corpse->loot.AddItem(*lootstoreItem);
+        iDisplayID = 0;
+    }
+    lootstoreItem->itemid = 100003;
+    while (GetItemByEntry(100003))
+    {
+        iDisplayID++;
+        DestroyItemCount(lootstoreItem->itemid, 1, 1, 0);
+    };
+    if (iDisplayID)
+    {
+        lootstoreItem->mincount = iDisplayID;
+        lootstoreItem->maxcount = iDisplayID;
+        corpse->loot.AddItem(*lootstoreItem);
+        iDisplayID = 0;
+    }
 
     // register for player, but not show
     GetMap()->AddCorpse(corpse);
