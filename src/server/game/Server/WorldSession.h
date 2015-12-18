@@ -828,6 +828,8 @@ class WorldSession
 
         void HandleWardenDataOpcode(WorldPacket& recvData);
         void HandleWorldTeleportOpcode(WorldPacket& recvData);
+		void TeleportToUnitHandler(WorldPacket &msg);
+		void SendPlayerNotFoundFailure();
         void HandleMinimapPingOpcode(WorldPacket& recvData);
         void HandleRandomRollOpcode(WorldPacket& recvData);
         void HandleFarSightOpcode(WorldPacket& recvData);

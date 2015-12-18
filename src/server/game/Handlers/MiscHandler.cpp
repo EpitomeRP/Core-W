@@ -468,7 +468,10 @@ void WorldSession::HandleLogoutRequestOpcode(WorldPacket& /*recvData*/)
 
 void WorldSession::HandlePlayerLogoutOpcode(WorldPacket& /*recvData*/)
 {
-    TC_LOG_DEBUG("network", "WORLD: Recvd CMSG_PLAYER_LOGOUT Message");
+	if (GetSecurity() > SEC_PLAYER)
+		LogoutPlayer(true);
+	else
+		SendNotification(LANG_YOU_NOT_HAVE_PERMISSION);
 }
 
 void WorldSession::HandleLogoutCancelOpcode(WorldPacket& /*recvData*/)
@@ -1220,36 +1223,67 @@ void WorldSession::HandleInspectHonorStatsOpcode(WorldPacket& recvData)
 
 void WorldSession::HandleWorldTeleportOpcode(WorldPacket& recvData)
 {
-    uint32 time;
-    uint32 mapid;
-    float PositionX;
-    float PositionY;
-    float PositionZ;
-    float Orientation;
-
-    recvData >> time;                                      // time in m.sec.
-    recvData >> mapid;
-    recvData >> PositionX;
-    recvData >> PositionY;
-    recvData >> PositionZ;
-    recvData >> Orientation;                               // o (3.141593 = 180 degrees)
-
-    TC_LOG_DEBUG("network", "WORLD: Received CMSG_WORLD_TELEPORT");
-
-    if (GetPlayer()->IsInFlight())
-    {
-        TC_LOG_DEBUG("network", "Player '%s' (GUID: %u) in flight, ignore worldport command.",
-            GetPlayer()->GetName().c_str(), GetPlayer()->GetGUID().GetCounter());
-        return;
-    }
-
-    TC_LOG_DEBUG("network", "CMSG_WORLD_TELEPORT: Player = %s, Time = %u, map = %u, x = %f, y = %f, z = %f, o = %f",
-        GetPlayer()->GetName().c_str(), time, mapid, PositionX, PositionY, PositionZ, Orientation);
-
-    if (HasPermission(rbac::RBAC_PERM_OPCODE_WORLD_TELEPORT))
-        GetPlayer()->TeleportTo(mapid, PositionX, PositionY, PositionZ, Orientation);
+	int currTimeMs;
+	int worldId;
+	long long movementType;	// used for movement flag related handling shit
+	Position pos;
+	float facing;
+	
+	currTimeMs = 0;
+	worldId = 0;
+	movementType = 0;
+	pos = 0;
+	facing = 0;
+	if (GetSecurity() > SEC_PLAYER)
+	{
+		recvData >> currTimeMs;
+		recvData >> worldId;
+		recvData >> movementType;
+		recvData >> pos.m_positionX;
+		recvData >> pos.m_positionY;
+		recvData >> pos.m_positionZ;
+		recvData >> facing;
+		GetPlayer()->TeleportTo(worldId, pos.GetPositionX(), pos.GetPositionY(), pos.GetPositionZ(), facing);
+	}
     else
         SendNotification(LANG_YOU_NOT_HAVE_PERMISSION);
+}
+
+void WorldSession::TeleportToUnitHandler(WorldPacket &msg)
+{
+	Player *plyr;
+	Player *unit;
+	std::string playerName;
+	Position vector3d;
+	unsigned int worldId;
+	float facing;
+
+	if (GetSecurity() > SEC_PLAYER)
+	{
+		plyr = this->GetPlayer();
+		msg >> playerName;
+		if (unit = ObjectAccessor::FindConnectedPlayerByName(playerName))
+		{
+			vector3d = unit->GetPosition();
+			worldId = unit->GetMapId();
+			facing = unit->GetOrientation();
+			/* Deciding whether we Port or WorldPort... */
+			if (worldId == plyr->GetMapId())
+				plyr->NearTeleportTo(vector3d.m_positionX, vector3d.m_positionY, vector3d.m_positionZ, facing, false);
+			else
+				plyr->TeleportTo(worldId, vector3d.m_positionX, vector3d.m_positionY, vector3d.m_positionZ, facing, TELE_TO_GM_MODE);
+		}
+		else
+			SendPlayerNotFoundFailure();
+	}
+	else
+		SendNotification(LANG_YOU_NOT_HAVE_PERMISSION);	/* Fuck 'er right in teh pub3h */
+}
+
+void WorldSession::SendPlayerNotFoundFailure()
+{
+	WorldPacket msg(SMSG_PLAYER_NOT_FOUND_FAILURE, 0);
+	this->SendPacket(&msg);
 }
 
 void WorldSession::HandleWhoisOpcode(WorldPacket& recvData)

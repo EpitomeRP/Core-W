@@ -34,8 +34,8 @@ OpcodeHandler opcodeTable[NUM_MSG_TYPES] =
     /*0x005*/ { "SMSG_QUERY_OBJECT_POSITION",                   STATUS_NEVER,    PROCESS_INPLACE,      &WorldSession::Handle_ServerSide               },
     /*0x006*/ { "CMSG_QUERY_OBJECT_ROTATION",                   STATUS_NEVER,    PROCESS_INPLACE,      &WorldSession::Handle_NULL                     },
     /*0x007*/ { "SMSG_QUERY_OBJECT_ROTATION",                   STATUS_NEVER,    PROCESS_INPLACE,      &WorldSession::Handle_ServerSide               },
-    /*0x008*/ { "CMSG_WORLD_TELEPORT",                          STATUS_LOGGEDIN, PROCESS_THREADUNSAFE, &WorldSession::HandleWorldTeleportOpcode       },
-    /*0x009*/ { "CMSG_TELEPORT_TO_UNIT",                        STATUS_LOGGEDIN, PROCESS_INPLACE,      &WorldSession::Handle_NULL                     },
+    /*0x008*/ { "CMSG_WORLD_TELEPORT",                          STATUS_LOGGEDIN, PROCESS_THREADUNSAFE, &WorldSession::HandleWorldTeleportOpcode		      },
+    /*0x009*/ { "CMSG_TELEPORT_TO_UNIT",                        STATUS_LOGGEDIN, PROCESS_INPLACE,      &WorldSession::TeleportToUnitHandler                     },
     /*0x00A*/ { "CMSG_ZONE_MAP",                                STATUS_NEVER,    PROCESS_INPLACE,      &WorldSession::Handle_NULL                     },
     /*0x00B*/ { "SMSG_ZONE_MAP",                                STATUS_NEVER,    PROCESS_INPLACE,      &WorldSession::Handle_ServerSide               },
     /*0x00C*/ { "CMSG_DEBUG_CHANGECELLZONE",                    STATUS_NEVER,    PROCESS_INPLACE,      &WorldSession::Handle_NULL                     },
@@ -1336,5 +1336,5 @@ OpcodeHandler opcodeTable[NUM_MSG_TYPES] =
     /*0x51B*/ { "CMSG_COMMENTATOR_SKIRMISH_QUEUE_COMMAND",      STATUS_NEVER,    PROCESS_INPLACE,      &WorldSession::Handle_NULL                     },
     /*0x51C*/ { "SMSG_COMMENTATOR_SKIRMISH_QUEUE_RESULT1",      STATUS_NEVER,    PROCESS_INPLACE,      &WorldSession::Handle_ServerSide               },
     /*0x51D*/ { "SMSG_COMMENTATOR_SKIRMISH_QUEUE_RESULT2",      STATUS_NEVER,    PROCESS_INPLACE,      &WorldSession::Handle_ServerSide               },
-    /*0x51E*/ { "SMSG_COMPRESSED_UNKNOWN_1310",                 STATUS_NEVER,    PROCESS_INPLACE,      &WorldSession::Handle_ServerSide               },
+    /*0x51E*/ { "SMSG_COMPRESSED_UNKNOWN_1310",                 STATUS_NEVER,    PROCESS_INPLACE,      &WorldSession::Handle_ServerSide               }
 };
