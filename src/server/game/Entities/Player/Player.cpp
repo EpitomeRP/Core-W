@@ -906,6 +906,7 @@ Player::Player(WorldSession* session): Unit(true)
     _activeCheats = CHEAT_NONE;
     m_achievementMgr = new AchievementMgr(this);
     m_reputationMgr = new ReputationMgr(this);
+	m_lastKillerGUID = 0x00000000;
 }
 
 Player::~Player()
@@ -5117,7 +5118,6 @@ Corpse* Player::CreateCorpse()
 
     Corpse* corpse = new Corpse((m_ExtraFlags & PLAYER_EXTRA_PVP_DEATH) ? CORPSE_RESURRECTABLE_PVP : CORPSE_RESURRECTABLE_PVE);
     SetPvPDeath(false);
-
     if (!corpse->Create(GetMap()->GenerateLowGuid<HighGuid::Corpse>(), this))
     {
         delete corpse;
@@ -5152,8 +5152,13 @@ Corpse* Player::CreateCorpse()
     corpse->SetUInt32Value(CORPSE_FIELD_FLAGS, flags);
     corpse->SetUInt32Value(CORPSE_FIELD_DISPLAY_ID, GetNativeDisplayId());
     corpse->SetUInt32Value(CORPSE_FIELD_GUILD, GetGuildId());
-    corpse->SetUInt32Value(CORPSE_FIELD_DYNAMIC_FLAGS, CORPSE_DYNFLAG_LOOTABLE);
-    corpse->lootForBody = 1;
+	if ((((m_lastKillerGUID >> 52) & 0x00000FFF) == 0x00000000) && m_lastKillerGUID != this->GetGUID())
+	{
+		corpse->SetUInt32Value(CORPSE_FIELD_DYNAMIC_FLAGS, CORPSE_DYNFLAG_LOOTABLE);
+		corpse->lootForBody = 1;
+	}
+	else
+		corpse->lootForBody = 0;
 
     uint32 iDisplayID;
     uint32 iIventoryType;
@@ -5168,58 +5173,64 @@ Corpse* Player::CreateCorpse()
 
             _cfi = iDisplayID | (iIventoryType << 24);
             corpse->SetUInt32Value(CORPSE_FIELD_ITEM + i, _cfi);
-            lootstoreItem->itemid = m_items[i]->GetTemplate()->ItemId;
-            lootstoreItem->reference = 0;
-            lootstoreItem->chance = 100.0f;
-            lootstoreItem->lootmode = 0;
-            lootstoreItem->needs_quest = 0;
-            lootstoreItem->groupid = 0;
-            lootstoreItem->mincount = 1;
-            lootstoreItem->maxcount = 1;
-            corpse->loot.AddItem(*lootstoreItem);
+			if ((((m_lastKillerGUID >> 52) & 0x00000FFF) == 0x00000000) && m_lastKillerGUID != this->GetGUID())
+			{
+				lootstoreItem->itemid = m_items[i]->GetTemplate()->ItemId;
+				lootstoreItem->reference = 0;
+				lootstoreItem->chance = 100.0f;
+				lootstoreItem->lootmode = 0;
+				lootstoreItem->needs_quest = 0;
+				lootstoreItem->groupid = 0;
+				lootstoreItem->mincount = 1;
+				lootstoreItem->maxcount = 1;
+				corpse->loot.AddItem(*lootstoreItem);
+			}
         }
     }
-    /* Using this variable as iterator */
-    iDisplayID = 0;
-    lootstoreItem->itemid = 100001;
-    while (GetItemByEntry(100001))
-    {
-        iDisplayID++;
-        DestroyItemCount(lootstoreItem->itemid, 1, 1, 0);
-    };
-    if (iDisplayID)
-    {
-        lootstoreItem->mincount = iDisplayID;
-        lootstoreItem->maxcount = iDisplayID;
-        corpse->loot.AddItem(*lootstoreItem);
-        iDisplayID = 0;
-    }
-    lootstoreItem->itemid = 100002;
-    while (GetItemByEntry(100002))
-    {
-        iDisplayID++;
-        DestroyItemCount(lootstoreItem->itemid, 1, 1, 0);
-    };
-    if (iDisplayID)
-    {
-        lootstoreItem->mincount = iDisplayID;
-        lootstoreItem->maxcount = iDisplayID;
-        corpse->loot.AddItem(*lootstoreItem);
-        iDisplayID = 0;
-    }
-    lootstoreItem->itemid = 100003;
-    while (GetItemByEntry(100003))
-    {
-        iDisplayID++;
-        DestroyItemCount(lootstoreItem->itemid, 1, 1, 0);
-    };
-    if (iDisplayID)
-    {
-        lootstoreItem->mincount = iDisplayID;
-        lootstoreItem->maxcount = iDisplayID;
-        corpse->loot.AddItem(*lootstoreItem);
-        iDisplayID = 0;
-    }
+	if ((((m_lastKillerGUID >> 52) & 0x00000FFF) == 0x00000000) && m_lastKillerGUID != this->GetGUID())
+	{
+		/* Using this variable as iterator */
+		iDisplayID = 0;
+		lootstoreItem->itemid = 100001;
+		while (GetItemByEntry(100001))
+		{
+			iDisplayID++;
+			DestroyItemCount(lootstoreItem->itemid, 1, 1, 0);
+		};
+		if (iDisplayID)
+		{
+			lootstoreItem->mincount = iDisplayID;
+			lootstoreItem->maxcount = iDisplayID;
+			corpse->loot.AddItem(*lootstoreItem);
+			iDisplayID = 0;
+		}
+		lootstoreItem->itemid = 100002;
+		while (GetItemByEntry(100002))
+		{
+			iDisplayID++;
+			DestroyItemCount(lootstoreItem->itemid, 1, 1, 0);
+		};
+		if (iDisplayID)
+		{
+			lootstoreItem->mincount = iDisplayID;
+			lootstoreItem->maxcount = iDisplayID;
+			corpse->loot.AddItem(*lootstoreItem);
+			iDisplayID = 0;
+		}
+		lootstoreItem->itemid = 100003;
+		while (GetItemByEntry(100003))
+		{
+			iDisplayID++;
+			DestroyItemCount(lootstoreItem->itemid, 1, 1, 0);
+		};
+		if (iDisplayID)
+		{
+			lootstoreItem->mincount = iDisplayID;
+			lootstoreItem->maxcount = iDisplayID;
+			corpse->loot.AddItem(*lootstoreItem);
+			iDisplayID = 0;
+		}
+	}
 
     // register for player, but not show
     GetMap()->AddCorpse(corpse);

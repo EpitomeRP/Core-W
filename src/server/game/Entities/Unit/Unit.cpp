@@ -15586,6 +15586,9 @@ void Unit::Kill(Unit* victim, bool durabilityLoss)
         if (Player* killed = victim->ToPlayer())
             sScriptMgr->OnPlayerKilledByCreature(killerCre, killed);
     }
+
+	if (player)
+		player->m_lastKillerGUID = this->GetGUID();
 }
 
 float Unit::GetPositionZMinusOffset() const

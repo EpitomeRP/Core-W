@@ -2305,6 +2305,7 @@ class Player : public Unit, public GridObject<Player>
 
         std::string GetMapAreaAndZoneString();
         std::string GetCoordsMapAreaAndZoneString();
+		uint64 m_lastKillerGUID;
 
     protected:
         // Gamemaster whisper whitelist
@@ -2558,7 +2559,6 @@ class Player : public Unit, public GridObject<Player>
         bool IsAlwaysDetectableFor(WorldObject const* seer) const override;
 
         uint8 m_grantableLevels;
-
         bool m_needsZoneUpdate;
 
     private:
@@ -2629,7 +2629,6 @@ class Player : public Unit, public GridObject<Player>
         uint32 _pendingBindTimer;
 
         uint32 _activeCheats;
-
         WorldLocation _corpseLocation;
 };
 
