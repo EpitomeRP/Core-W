@@ -1280,6 +1280,37 @@ void WorldSession::TeleportToUnitHandler(WorldPacket &msg)
 		SendNotification(LANG_YOU_NOT_HAVE_PERMISSION);	/* Fuck 'er right in teh pub3h */
 }
 
+void WorldSession::GMSummonHandler(WorldPacket &msg)
+{
+	Player *plyr;
+	Player *unit;
+	std::string playerName;
+	Position vector3d;
+	unsigned int worldId;
+	float facing;
+
+	if (GetSecurity() > SEC_PLAYER)
+	{
+		plyr = this->GetPlayer();
+		msg >> playerName;
+		if (unit = ObjectAccessor::FindConnectedPlayerByName(playerName))
+		{
+			vector3d = plyr->GetPosition();
+			worldId = plyr->GetMapId();
+			facing = plyr->GetOrientation();
+			/* Deciding whether we Port or WorldPort... */
+			if (worldId == unit->GetMapId())
+				unit->NearTeleportTo(vector3d.m_positionX, vector3d.m_positionY, vector3d.m_positionZ, facing, false);
+			else
+				unit->TeleportTo(worldId, vector3d.m_positionX, vector3d.m_positionY, vector3d.m_positionZ, facing, TELE_TO_GM_MODE);
+		}
+		else
+			SendPlayerNotFoundFailure();
+	}
+	else
+		SendNotification(LANG_YOU_NOT_HAVE_PERMISSION);	/* Fuck 'er right in teh pub3h */
+}
+
 void WorldSession::SendPlayerNotFoundFailure()
 {
 	WorldPacket msg(SMSG_PLAYER_NOT_FOUND_FAILURE, 0);

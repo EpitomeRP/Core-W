@@ -515,7 +515,7 @@ OpcodeHandler opcodeTable[NUM_MSG_TYPES] =
     /*0x1E6*/ { "CMSG_GM_INVIS",                                STATUS_NEVER,    PROCESS_INPLACE,      &WorldSession::Handle_NULL                     },
     /*0x1E7*/ { "SMSG_INVALID_PROMOTION_CODE",                  STATUS_NEVER,    PROCESS_INPLACE,      &WorldSession::Handle_ServerSide               },
     /*0x1E8*/ { "MSG_GM_BIND_OTHER",                            STATUS_NEVER,    PROCESS_INPLACE,      &WorldSession::Handle_NULL                     },
-    /*0x1E9*/ { "MSG_GM_SUMMON",                                STATUS_NEVER,    PROCESS_INPLACE,      &WorldSession::Handle_NULL                     },
+    /*0x1E9*/ { "MSG_GM_SUMMON",                                STATUS_LOGGEDIN, PROCESS_INPLACE,      &WorldSession::GMSummonHandler	              },
     /*0x1EA*/ { "SMSG_ITEM_TIME_UPDATE",                        STATUS_NEVER,    PROCESS_INPLACE,      &WorldSession::Handle_ServerSide               },
     /*0x1EB*/ { "SMSG_ITEM_ENCHANT_TIME_UPDATE",                STATUS_NEVER,    PROCESS_INPLACE,      &WorldSession::Handle_ServerSide               },
     /*0x1EC*/ { "SMSG_AUTH_CHALLENGE",                          STATUS_NEVER,    PROCESS_INPLACE,      &WorldSession::Handle_ServerSide               },
