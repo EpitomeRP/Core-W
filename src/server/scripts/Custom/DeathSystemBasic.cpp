@@ -126,11 +126,16 @@ public:
 		void Absorb(AuraEffect* aurEff, DamageInfo & dmgInfo, uint32 & absorbAmount)
 		{
 			Player *victim = ((Player *)GetTarget());
+			Unit *attacker = dmgInfo.GetAttacker();
 			SpellHistory *spellhistory = victim->GetSpellHistory();
 			int32 remainingHealth = victim->GetHealth() - dmgInfo.GetDamage();
 			uint32 allowedHealth = victim->CountPctFromMaxHealth(3);
-			if (victim->duel != NULL)
+			if (victim->duel != NULL || !attacker->isType(TYPEID_PLAYER))
+			{
+				if (remainingHealth <= 0)
+					victim->m_lastKillerGUID = attacker->GetGUID();
 				return;
+			}
 
 			// If damage kills us
 			if (remainingHealth <= 0 && !spellhistory->HasCooldown(SPELL_EXECUTE_CD))
