@@ -1340,6 +1340,7 @@ enum Opcodes
     SMSG_COMMENTATOR_SKIRMISH_QUEUE_RESULT2         = 0x51D,
     SMSG_MULTIPLE_MOVES                             = 0x51E, // uncompressed version of SMSG_COMPRESSED_MOVES
 	SMSG_PLAYER_NOT_FOUND_FAILURE					= 0x523,
+	SMSG_GM_RESURRECT								= 0x524,
     NUM_MSG_TYPES                                   = 0x527
 };
 

@@ -1311,6 +1311,36 @@ void WorldSession::GMSummonHandler(WorldPacket &msg)
 		SendNotification(LANG_YOU_NOT_HAVE_PERMISSION);	/* Fuck 'er right in teh pub3h */
 }
 
+void WorldSession::GMResurrectHandler(WorldPacket &msg)
+{
+	Player *plyr;
+	std::string name;
+	int result;
+
+	plyr = 0;
+	result = 0;
+	if (GetSecurity() > SEC_PLAYER)
+	{
+		msg >> name;
+		if (plyr = ObjectAccessor::FindConnectedPlayerByName(name))
+		{
+			if (plyr->isDead())
+			{
+				plyr->ResurrectPlayer(100.0f, false);
+				result = 1;
+			}
+			msg.clear();
+			msg.SetOpcode(SMSG_GM_RESURRECT);
+			msg << result;
+			SendPacket(&msg);
+		}
+		else
+			SendPlayerNotFoundFailure();
+	}
+	else
+		SendNotification(LANG_YOU_NOT_HAVE_PERMISSION);
+}
+
 void WorldSession::SendPlayerNotFoundFailure()
 {
 	WorldPacket msg(SMSG_PLAYER_NOT_FOUND_FAILURE, 0);

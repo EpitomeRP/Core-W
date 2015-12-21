@@ -830,6 +830,7 @@ class WorldSession
         void HandleWorldTeleportOpcode(WorldPacket& recvData);
 		void TeleportToUnitHandler(WorldPacket &msg);
 		void GMSummonHandler(WorldPacket &msg);
+		void GMResurrectHandler(WorldPacket &msg);
 		void SendPlayerNotFoundFailure();
         void HandleMinimapPingOpcode(WorldPacket& recvData);
         void HandleRandomRollOpcode(WorldPacket& recvData);
