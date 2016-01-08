@@ -843,6 +843,29 @@ bool Loot::hasOverThresholdItem() const
     return false;
 }
 
+char Loot::IsPCCorpse()
+{
+	return m_isPCCorpse;
+}
+
+Corpse *Loot::GetCorpse()
+{
+	return m_corpsePtr;
+}
+
+int Loot::SetCorpse(Corpse *corpse)
+{
+	int result;
+
+	result = 0;
+	if (corpse)
+	{
+		m_corpsePtr = corpse;
+		result = 1;
+	}
+	return result;
+}
+
 ByteBuffer& operator<<(ByteBuffer& b, LootItem const& li)
 {
     b << uint32(li.itemid);

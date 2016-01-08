@@ -120,6 +120,7 @@ enum LootSlotType
 };
 
 class Player;
+class Corpse;
 class LootStore;
 
 struct LootStoreItem
@@ -319,15 +320,17 @@ struct Loot
     std::vector<LootItem> quest_items;
     uint32 gold;
     uint8 unlootedCount;
-    ObjectGuid roundRobinPlayer;                            // GUID of the player having the Round-Robin ownership for the loot. If 0, round robin owner has released.
-    LootType loot_type;                                     // required for achievement system
-    uint8 maxDuplicates;                                    // Max amount of items with the same entry that can drop (default is 1; on 25 man raid mode 3)
+    ObjectGuid roundRobinPlayer;	// GUID of the player having the Round-Robin ownership for the loot. If 0, round robin owner has released.
+    LootType loot_type;		// required for achievement system
+    uint8 maxDuplicates;	// Max amount of items with the same entry that can drop (default is 1; on 25 man raid mode 3)
+	char m_isPCCorpse;		// Whether or not the corpse is owned by a PC
+	Corpse *m_corpsePtr;	// Corpse object pointer, in the event that the corpse belongs to a PC
 
     // GUIDLow of container that holds this loot (item_instance.entry)
     //  Only set for inventory items that can be right-click looted
     uint32 containerID;
 
-    Loot(uint32 _gold = 0) : gold(_gold), unlootedCount(0), roundRobinPlayer(), loot_type(LOOT_CORPSE), maxDuplicates(1), containerID(0) { }
+    Loot(uint32 _gold = 0) : gold(_gold), unlootedCount(0), roundRobinPlayer(), loot_type(LOOT_CORPSE), maxDuplicates(1), containerID(0), m_isPCCorpse(0) { }
     ~Loot() { clear(); }
 
     // For deleting items at loot removal since there is no backward interface to the Item()
@@ -384,6 +387,9 @@ struct Loot
     uint32 GetMaxSlotInLootFor(Player* player) const;
     bool hasItemFor(Player* player) const;
     bool hasOverThresholdItem() const;
+	char IsPCCorpse();
+	Corpse *GetCorpse();
+	int SetCorpse(Corpse *corpse);
 
     private:
         void FillNotNormalLootFor(Player* player, bool presentAtLooting);

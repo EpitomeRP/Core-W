@@ -5156,6 +5156,8 @@ Corpse* Player::CreateCorpse()
 	{
 		corpse->SetUInt32Value(CORPSE_FIELD_DYNAMIC_FLAGS, CORPSE_DYNFLAG_LOOTABLE);
 		corpse->lootForBody = 1;
+		corpse->loot.m_isPCCorpse = 1;
+		corpse->loot.m_corpsePtr = corpse;
 	}
 	else
 		corpse->lootForBody = 0;
