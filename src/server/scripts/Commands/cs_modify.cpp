@@ -1346,7 +1346,10 @@ public:
         target->SetByteValue(PLAYER_BYTES_3, 0, gender);
 
         // Change display ID
-        target->InitDisplayIds();
+		if (gender == GENDER_FEMALE)
+			target->InitDisplayIds(info->displayId_f);
+		else
+			target->InitDisplayIds(info->displayId_m);
 
         char const* gender_full = gender ? "female" : "male";
 

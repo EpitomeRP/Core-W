@@ -26,6 +26,7 @@ EndScriptData */
 #include "Chat.h"
 #include "Language.h"
 #include "ObjectAccessor.h"
+#include "ObjectMgr.h"
 #include "Player.h"
 #include "Pet.h"
 #include "ScriptMgr.h"
@@ -107,8 +108,13 @@ public:
         player->SetUInt32Value(UNIT_FIELD_BYTES_0, ((player->getRace()) | (player->getClass() << 8) | (player->getGender() << 16) | (powerType << 24)));
 
         // reset only if player not in some form;
-        if (player->GetShapeshiftForm() == FORM_NONE)
-            player->InitDisplayIds();
+		if (player->GetShapeshiftForm() == FORM_NONE)
+		{
+			if (player->getGender() == GENDER_FEMALE)
+				player->InitDisplayIds(sObjectMgr->GetPlayerInfo(player->getRace(), player->getClass())->displayId_f);
+			else
+				player->InitDisplayIds(sObjectMgr->GetPlayerInfo(player->getRace(), player->getClass())->displayId_m);
+		}
 
         player->SetByteValue(UNIT_FIELD_BYTES_2, 1, UNIT_BYTE2_FLAG_PVP);
 

@@ -1878,7 +1878,10 @@ namespace LuaPlayer
 
         player->SetByteValue(UNIT_FIELD_BYTES_0, 2, gender);
         player->SetByteValue(PLAYER_BYTES_3, 0, gender);
-        player->InitDisplayIds();
+		if (gender == GENDER_FEMALE)
+			player->InitDisplayIds(sObjectMgr->GetPlayerInfo(player->getRace(), player->getClass())->displayId_f);
+		else
+			player->InitDisplayIds(sObjectMgr->GetPlayerInfo(player->getRace(), player->getClass())->displayId_m);
         return 0;
     }
 

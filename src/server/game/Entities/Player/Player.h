@@ -1909,7 +1909,7 @@ class Player : public Unit, public GridObject<Player>
         TeamId GetTeamId() const { return m_team == ALLIANCE ? TEAM_ALLIANCE : TEAM_HORDE; }
         void setFactionForRace(uint8 race);
 
-        void InitDisplayIds();
+        void InitDisplayIds(uint32 displayId);
 
         bool IsAtGroupRewardDistance(WorldObject const* pRewardSource) const;
         bool IsAtRecruitAFriendDistance(WorldObject const* pOther) const;
