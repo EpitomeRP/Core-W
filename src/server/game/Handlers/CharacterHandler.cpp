@@ -45,6 +45,7 @@
 #include "World.h"
 #include "WorldPacket.h"
 #include "WorldSession.h"
+#include "MapManager.h"
 #ifdef ELUNA
 #include "LuaEngine.h"
 #endif
@@ -999,6 +1000,18 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder* holder)
     // Handle Login-Achievements (should be handled after loading)
     _player->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_ON_LOGIN, 1);
 
+	QueryResult result = WorldDatabase.PQuery("SELECT guid, map FROM gameobject WHERE owner=%llu", pCurrChar->GetGUID());
+	if (result)
+	{
+		Field *fields = result->Fetch();
+		int mapId;
+		ObjectGuid objectGUID(fields[0].GetUInt64());
+		mapId = fields[1].GetUInt32();
+		Map *map = sMapMgr->FindMap(mapId, 0);
+		auto bounds = map->GetGameObjectBySpawnIdStore().equal_range(objectGUID);
+		if (bounds.first != bounds.second)
+			pCurrChar->m_aptPtr = bounds.first->second;
+	}
     sScriptMgr->OnPlayerLogin(pCurrChar, firstLogin);
 
     delete holder;

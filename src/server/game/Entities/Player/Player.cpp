@@ -907,6 +907,7 @@ Player::Player(WorldSession* session): Unit(true)
     m_achievementMgr = new AchievementMgr(this);
     m_reputationMgr = new ReputationMgr(this);
 	m_lastKillerGUID = 0x00000000;
+	m_aptPtr = 0;
 }
 
 Player::~Player()

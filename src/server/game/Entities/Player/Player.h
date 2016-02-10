@@ -2306,6 +2306,7 @@ class Player : public Unit, public GridObject<Player>
         std::string GetMapAreaAndZoneString();
         std::string GetCoordsMapAreaAndZoneString();
 		uint64 m_lastKillerGUID;
+		GameObject *m_aptPtr;
 
     protected:
         // Gamemaster whisper whitelist

@@ -2606,7 +2606,7 @@ enum GreatmothersSoulcather
 class spell_item_greatmothers_soulcatcher : public SpellScriptLoader
 {
 public:
-    spell_item_greatmothers_soulcatcher() : SpellScriptLoader("spell_item_greatmothers_soulcatcher") { }
+	spell_item_greatmothers_soulcatcher() : SpellScriptLoader("spell_item_greatmothers_soulcatcher") { }
 
     class spell_item_greatmothers_soulcatcher_SpellScript : public SpellScript
     {
@@ -2628,6 +2628,100 @@ public:
     {
         return new spell_item_greatmothers_soulcatcher_SpellScript();
     }
+};
+
+class SpellScriptLoader_PortableTent : public SpellScriptLoader
+{
+public:
+	SpellScriptLoader_PortableTent() : SpellScriptLoader("SpellScript_PortableTent") { }
+
+	class SpellScript_PortableTent : public SpellScript
+	{
+		PrepareSpellScript(SpellScript_PortableTent);
+
+		void HandleDummy(SpellEffIndex)
+		{
+			Player *plyr;
+			GameObject *objectPtr;
+
+			plyr = GetCaster()->ToPlayer();
+			objectPtr = 0;
+			if (plyr->m_aptPtr)
+			{
+				objectPtr = plyr->m_aptPtr;
+				objectPtr->Delete();
+				objectPtr->DeleteFromDB();
+				plyr->m_aptPtr = 0;
+			}
+			else
+			{
+				const GameObjectTemplate *objectInfo;
+				const Position *location;
+				Map *mapPtr;
+				float x;
+				float y;
+				float z;
+				float facing;
+				unsigned long lowGUID;
+
+				if (plyr->GetMap()->IsBattlegroundOrArena() || plyr->GetMap()->IsDungeon())
+				{
+					plyr->KillPlayer();
+					return;
+				}
+
+				objectInfo = sObjectMgr->GetGameObjectTemplate(190794);
+				if (!objectInfo)
+					return;
+
+				if (objectInfo->displayId && !sGameObjectDisplayInfoStore.LookupEntry(objectInfo->displayId))
+					return;
+
+				location = GetSpell()->m_targets.GetSrcPos();
+				if (location)
+				{
+					x = location->GetPositionX();
+					y = location->GetPositionY();
+					z = location->GetPositionZ();
+					facing = plyr->GetOrientation() - M_PI;
+				}
+				mapPtr = plyr->GetMap();
+				objectPtr = new GameObject;
+				lowGUID = mapPtr->GenerateLowGuid<HighGuid::GameObject>();
+
+				if (!objectPtr->Create(lowGUID, objectInfo->entry, mapPtr, plyr->GetPhaseMaskForSpawn(), x, y, z, facing, 0.0f, 0.0f, 0.0f, 0.0f, 0, GO_STATE_READY))
+				{
+					delete objectPtr;
+					return;
+				}
+
+				objectPtr->SetRespawnTime(0);
+				objectPtr->SaveToDB(mapPtr->GetId(), (1 << mapPtr->GetSpawnMode()), plyr->GetPhaseMaskForSpawn());
+				WorldDatabase.PExecute("UPDATE gameobject SET owner=%llu WHERE guid=%llu", GetCaster()->GetGUID(), objectPtr->GetSpawnId());
+				lowGUID = objectPtr->GetSpawnId();
+
+				delete objectPtr;
+				objectPtr = new GameObject();
+				if (!objectPtr->LoadGameObjectFromDB(lowGUID, mapPtr))
+				{
+					delete objectPtr;
+					return;
+				}
+				sObjectMgr->AddGameobjectToGrid(lowGUID, sObjectMgr->GetGOData(lowGUID));
+				plyr->m_aptPtr = objectPtr;
+			}
+		}
+
+		void Register() override
+		{
+			OnEffectLaunch += SpellEffectFn(SpellScript_PortableTent::HandleDummy, EFFECT_0, SPELL_EFFECT_SCRIPT_EFFECT);
+		}
+	};
+
+	SpellScript* GetSpellScript() const override
+	{
+		return new SpellScript_PortableTent();
+	}
 };
 
 void AddSC_item_spell_scripts()
@@ -2698,4 +2792,5 @@ void AddSC_item_spell_scripts()
     new spell_item_chicken_cover();
     new spell_item_muisek_vessel();
     new spell_item_greatmothers_soulcatcher();
+	new SpellScriptLoader_PortableTent();
 }
