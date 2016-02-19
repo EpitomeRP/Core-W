@@ -2661,55 +2661,57 @@ public:
 				objectPtr->DeleteFromDB();
 				plyr->m_aptPtr = 0;
 			}
-
-			if (plyr->GetMap()->IsBattlegroundOrArena() || plyr->GetMap()->IsDungeon())
+			else
 			{
-				plyr->KillPlayer();
-				return;
-			}
+				if (plyr->GetMap()->IsBattlegroundOrArena() || plyr->GetMap()->IsDungeon())
+				{
+					plyr->KillPlayer();
+					return;
+				}
 
-			objectInfo = sObjectMgr->GetGameObjectTemplate(190794);
-			if (!objectInfo)
-				return;
+				objectInfo = sObjectMgr->GetGameObjectTemplate(190794);
+				if (!objectInfo)
+					return;
 
-			if (objectInfo->displayId && !sGameObjectDisplayInfoStore.LookupEntry(objectInfo->displayId))
-				return;
+				if (objectInfo->displayId && !sGameObjectDisplayInfoStore.LookupEntry(objectInfo->displayId))
+					return;
 
-			location = GetSpell()->m_targets.GetSrcPos();
-			if (location)
-			{
-				x = location->GetPositionX();
-				y = location->GetPositionY();
-				z = location->GetPositionZ();
-				facing = plyr->GetOrientation() - M_PI;
-			}
-			mapPtr = plyr->GetMap();
-			objectPtr = new GameObject;
-			lowGUID = mapPtr->GenerateLowGuid<HighGuid::GameObject>();
+				location = GetSpell()->m_targets.GetSrcPos();
+				if (location)
+				{
+					x = location->GetPositionX();
+					y = location->GetPositionY();
+					z = location->GetPositionZ();
+					facing = plyr->GetOrientation() - M_PI;
+				}
+				mapPtr = plyr->GetMap();
+				objectPtr = new GameObject;
+				lowGUID = mapPtr->GenerateLowGuid<HighGuid::GameObject>();
 
-			if (!objectPtr->Create(lowGUID, objectInfo->entry, mapPtr, plyr->GetPhaseMaskForSpawn(), x, y, z, facing, 0.0f, 0.0f, 0.0f, 0.0f, 0, GO_STATE_READY))
-			{
+				if (!objectPtr->Create(lowGUID, objectInfo->entry, mapPtr, plyr->GetPhaseMaskForSpawn(), x, y, z, facing, 0.0f, 0.0f, 0.0f, 0.0f, 0, GO_STATE_READY))
+				{
+					delete objectPtr;
+					return;
+				}
+
+				objectPtr->SetRespawnTime(time(0) + 86400);
+				objectPtr->SaveToDB(mapPtr->GetId(), (1 << mapPtr->GetSpawnMode()), plyr->GetPhaseMaskForSpawn());
+				WorldDatabase.PExecute("UPDATE gameobject SET owner=%llu WHERE guid=%llu", GetCaster()->GetGUID(), objectPtr->GetSpawnId());
+				lowGUID = objectPtr->GetSpawnId();
+
 				delete objectPtr;
-				return;
+				objectPtr = new GameObject();
+				if (!objectPtr->LoadGameObjectFromDB(lowGUID, mapPtr))
+				{
+					delete objectPtr;
+					return;
+				}
+				sObjectMgr->AddGameobjectToGrid(lowGUID, sObjectMgr->GetGOData(lowGUID));
+				objectPtr->SetRespawnTime(time(0) + 86400);
+				objectPtr->SetLootMode(GO_READY);
+				objectPtr->m_ownerGUID = plyr->GetGUID();
+				plyr->m_aptPtr = objectPtr;
 			}
-
-			objectPtr->SetRespawnTime(time(0) + 86400);
-			objectPtr->SaveToDB(mapPtr->GetId(), (1 << mapPtr->GetSpawnMode()), plyr->GetPhaseMaskForSpawn());
-			WorldDatabase.PExecute("UPDATE gameobject SET owner=%llu WHERE guid=%llu", GetCaster()->GetGUID(), objectPtr->GetSpawnId());
-			lowGUID = objectPtr->GetSpawnId();
-
-			delete objectPtr;
-			objectPtr = new GameObject();
-			if (!objectPtr->LoadGameObjectFromDB(lowGUID, mapPtr))
-			{
-				delete objectPtr;
-				return;
-			}
-			sObjectMgr->AddGameobjectToGrid(lowGUID, sObjectMgr->GetGOData(lowGUID));
-			objectPtr->SetRespawnTime(time(0) + 86400);
-			objectPtr->SetLootMode(GO_READY);
-			objectPtr->m_ownerGUID = plyr->GetGUID();
-			plyr->m_aptPtr = objectPtr;
 		}
 
 		void Register() override
@@ -2721,6 +2723,102 @@ public:
 	SpellScript* GetSpellScript() const override
 	{
 		return new SpellScript_PortableTent();
+	}
+};
+
+class SpellScriptLoader_PortableBench : public SpellScriptLoader
+{
+public:
+	SpellScriptLoader_PortableBench() : SpellScriptLoader("SpellScript_PortableBench") { }
+
+	class SpellScript_PortableBench : public SpellScript
+	{
+		PrepareSpellScript(SpellScript_PortableBench);
+
+		void HandleDummy(SpellEffIndex)
+		{
+			Player *plyr;
+			GameObject *objectPtr;
+			const GameObjectTemplate *objectInfo;
+			const Position *location;
+			Map *mapPtr;
+			float x;
+			float y;
+			float z;
+			float facing;
+			unsigned long lowGUID;
+
+			plyr = GetCaster()->ToPlayer();
+			objectPtr = 0;
+			if (plyr->m_aptPtr)
+			{
+				objectPtr = plyr->m_aptPtr;
+				objectPtr->Delete();
+				objectPtr->DeleteFromDB();
+				plyr->m_aptPtr = 0;
+			}
+			else
+			{
+				if (plyr->GetMap()->IsBattlegroundOrArena() || plyr->GetMap()->IsDungeon())
+				{
+					plyr->KillPlayer();
+					return;
+				}
+
+				objectInfo = sObjectMgr->GetGameObjectTemplate(24392);
+				if (!objectInfo)
+					return;
+
+				if (objectInfo->displayId && !sGameObjectDisplayInfoStore.LookupEntry(objectInfo->displayId))
+					return;
+
+				location = GetSpell()->m_targets.GetSrcPos();
+				if (location)
+				{
+					x = location->GetPositionX();
+					y = location->GetPositionY();
+					z = location->GetPositionZ();
+					facing = plyr->GetOrientation() - M_PI;
+				}
+				mapPtr = plyr->GetMap();
+				objectPtr = new GameObject;
+				lowGUID = mapPtr->GenerateLowGuid<HighGuid::GameObject>();
+
+				if (!objectPtr->Create(lowGUID, objectInfo->entry, mapPtr, plyr->GetPhaseMaskForSpawn(), x, y, z, facing, 0.0f, 0.0f, 0.0f, 0.0f, 0, GO_STATE_READY))
+				{
+					delete objectPtr;
+					return;
+				}
+
+				objectPtr->SetRespawnTime(time(0) + 86400);
+				objectPtr->SaveToDB(mapPtr->GetId(), (1 << mapPtr->GetSpawnMode()), plyr->GetPhaseMaskForSpawn());
+				WorldDatabase.PExecute("UPDATE gameobject SET owner=%llu WHERE guid=%llu", GetCaster()->GetGUID(), objectPtr->GetSpawnId());
+				lowGUID = objectPtr->GetSpawnId();
+
+				delete objectPtr;
+				objectPtr = new GameObject();
+				if (!objectPtr->LoadGameObjectFromDB(lowGUID, mapPtr))
+				{
+					delete objectPtr;
+					return;
+				}
+				sObjectMgr->AddGameobjectToGrid(lowGUID, sObjectMgr->GetGOData(lowGUID));
+				objectPtr->SetRespawnTime(time(0) + 86400);
+				objectPtr->SetLootMode(GO_READY);
+				objectPtr->m_ownerGUID = plyr->GetGUID();
+				plyr->m_aptPtr = objectPtr;
+			}
+		}
+
+		void Register() override
+		{
+			OnEffectLaunch += SpellEffectFn(SpellScript_PortableBench::HandleDummy, EFFECT_0, SPELL_EFFECT_SCRIPT_EFFECT);
+		}
+	};
+
+	SpellScript* GetSpellScript() const override
+	{
+		return new SpellScript_PortableBench();
 	}
 };
 
@@ -2793,4 +2891,5 @@ void AddSC_item_spell_scripts()
     new spell_item_muisek_vessel();
     new spell_item_greatmothers_soulcatcher();
 	new SpellScriptLoader_PortableTent();
+	new SpellScriptLoader_PortableBench();
 }
