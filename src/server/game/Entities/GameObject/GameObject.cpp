@@ -64,6 +64,7 @@ GameObject::GameObject() : WorldObject(false), MapObject(),
 
     ResetLootMode(); // restore default loot mode
     m_stationaryPosition.Relocate(0.0f, 0.0f, 0.0f, 0.0f);
+	m_ownerGUID = 0x000000;
 }
 
 GameObject::~GameObject()
@@ -409,68 +410,78 @@ void GameObject::Update(uint32 diff)
                 time_t now = time(NULL);
                 if (m_respawnTime <= now)            // timer expired
                 {
-                    ObjectGuid dbtableHighGuid(HighGuid::GameObject, GetEntry(), m_spawnId);
-                    time_t linkedRespawntime = GetMap()->GetLinkedRespawnTime(dbtableHighGuid);
-                    if (linkedRespawntime)             // Can't respawn, the master is dead
-                    {
-                        ObjectGuid targetGuid = sObjectMgr->GetLinkedRespawnGuid(dbtableHighGuid);
-                        if (targetGuid == dbtableHighGuid) // if linking self, never respawn (check delayed to next day)
-                            SetRespawnTime(DAY);
-                        else
-                            m_respawnTime = (now > linkedRespawntime ? now : linkedRespawntime) + urand(5, MINUTE); // else copy time from master and add a little
-                        SaveRespawnTime(); // also save to DB immediately
-                        return;
-                    }
+					// If the object is created by a PC, we destroy it.
+					if (m_ownerGUID)
+					{
+						this->Delete();
+						this->DeleteFromDB();
+						return;
+					}
+					else
+					{
+						ObjectGuid dbtableHighGuid(HighGuid::GameObject, GetEntry(), m_spawnId);
+						time_t linkedRespawntime = GetMap()->GetLinkedRespawnTime(dbtableHighGuid);
+						if (linkedRespawntime)             // Can't respawn, the master is dead
+						{
+							ObjectGuid targetGuid = sObjectMgr->GetLinkedRespawnGuid(dbtableHighGuid);
+							if (targetGuid == dbtableHighGuid) // if linking self, never respawn (check delayed to next day)
+								SetRespawnTime(DAY);
+							else
+								m_respawnTime = (now > linkedRespawntime ? now : linkedRespawntime) + urand(5, MINUTE); // else copy time from master and add a little
+							SaveRespawnTime(); // also save to DB immediately
+							return;
+						}
 
-                    m_respawnTime = 0;
-                    m_SkillupList.clear();
-                    m_usetimes = 0;
+						m_respawnTime = 0;
+						m_SkillupList.clear();
+						m_usetimes = 0;
 
-                    switch (GetGoType())
-                    {
-                        case GAMEOBJECT_TYPE_FISHINGNODE:   //  can't fish now
-                        {
-                            Unit* caster = GetOwner();
-                            if (caster && caster->GetTypeId() == TYPEID_PLAYER)
-                            {
-                                caster->ToPlayer()->RemoveGameObject(this, false);
+						switch (GetGoType())
+						{
+						case GAMEOBJECT_TYPE_FISHINGNODE:   //  can't fish now
+						{
+							Unit* caster = GetOwner();
+							if (caster && caster->GetTypeId() == TYPEID_PLAYER)
+							{
+								caster->ToPlayer()->RemoveGameObject(this, false);
 
-                                WorldPacket data(SMSG_FISH_ESCAPED, 0);
-                                caster->ToPlayer()->SendDirectMessage(&data);
-                            }
-                            // can be delete
-                            m_lootState = GO_JUST_DEACTIVATED;
-                            return;
-                        }
-                        case GAMEOBJECT_TYPE_DOOR:
-                        case GAMEOBJECT_TYPE_BUTTON:
-                            // We need to open doors if they are closed (add there another condition if this code breaks some usage, but it need to be here for battlegrounds)
-                            if (GetGoState() != GO_STATE_READY)
-                                ResetDoorOrButton();
-                            break;
-                        case GAMEOBJECT_TYPE_FISHINGHOLE:
-                            // Initialize a new max fish count on respawn
-                            m_goValue.FishingHole.MaxOpens = urand(GetGOInfo()->fishinghole.minSuccessOpens, GetGOInfo()->fishinghole.maxSuccessOpens);
-                            break;
-                        default:
-                            break;
-                    }
+								WorldPacket data(SMSG_FISH_ESCAPED, 0);
+								caster->ToPlayer()->SendDirectMessage(&data);
+							}
+							// can be delete
+							m_lootState = GO_JUST_DEACTIVATED;
+							return;
+						}
+						case GAMEOBJECT_TYPE_DOOR:
+						case GAMEOBJECT_TYPE_BUTTON:
+							// We need to open doors if they are closed (add there another condition if this code breaks some usage, but it need to be here for battlegrounds)
+							if (GetGoState() != GO_STATE_READY)
+								ResetDoorOrButton();
+							break;
+						case GAMEOBJECT_TYPE_FISHINGHOLE:
+							// Initialize a new max fish count on respawn
+							m_goValue.FishingHole.MaxOpens = urand(GetGOInfo()->fishinghole.minSuccessOpens, GetGOInfo()->fishinghole.maxSuccessOpens);
+							break;
+						default:
+							break;
+						}
 
-                    // Despawn timer
-                    if (!m_spawnedByDefault)
-                    {
-                        // Can be despawned or destroyed
-                        SetLootState(GO_JUST_DEACTIVATED);
-                        return;
-                    }
+						// Despawn timer
+						if (!m_spawnedByDefault)
+						{
+							// Can be despawned or destroyed
+							SetLootState(GO_JUST_DEACTIVATED);
+							return;
+						}
 
-                    // Respawn timer
-                    uint32 poolid = GetSpawnId() ? sPoolMgr->IsPartOfAPool<GameObject>(GetSpawnId()) : 0;
-                    if (poolid)
-                        sPoolMgr->UpdatePool<GameObject>(poolid, GetSpawnId());
-                    else
-                        GetMap()->AddToMap(this);
-                }
+						// Respawn timer
+						uint32 poolid = GetSpawnId() ? sPoolMgr->IsPartOfAPool<GameObject>(GetSpawnId()) : 0;
+						if (poolid)
+							sPoolMgr->UpdatePool<GameObject>(poolid, GetSpawnId());
+						else
+							GetMap()->AddToMap(this);
+					}
+				}
             }
 
             if (isSpawned())
@@ -697,6 +708,11 @@ void GameObject::AddUniqueUse(Player* player)
 
 void GameObject::Delete()
 {
+	Player *plyr;
+
+	plyr = ObjectAccessor::FindPlayer((ObjectGuid)m_ownerGUID);
+	if (plyr)
+		plyr->m_aptPtr = 0;
     SetLootState(GO_NOT_READY);
     RemoveFromOwner();
 
@@ -791,7 +807,12 @@ void GameObject::SaveToDB(uint32 mapid, uint8 spawnMask, uint32 phaseMask)
     data.rotation1 = GetFloatValue(GAMEOBJECT_PARENTROTATION+1);
     data.rotation2 = GetFloatValue(GAMEOBJECT_PARENTROTATION+2);
     data.rotation3 = GetFloatValue(GAMEOBJECT_PARENTROTATION+3);
-    data.spawntimesecs = m_spawnedByDefault ? m_respawnDelayTime : -(int32)m_respawnDelayTime;
+
+	// If the game object is owned by a PC, we save the respawn time to properly destroy the object.
+	if (this->m_ownerGUID)
+		data.spawntimesecs = m_respawnTime;
+	else
+		data.spawntimesecs = m_spawnedByDefault ? m_respawnDelayTime : -(int32)m_respawnDelayTime;
     data.animprogress = GetGoAnimProgress();
     data.go_state = GetGoState();
     data.spawnMask = spawnMask;
@@ -838,7 +859,10 @@ void GameObject::SaveToDB(uint32 mapid, uint8 spawnMask, uint32 phaseMask)
     stmt->setFloat(index++, GetFloatValue(GAMEOBJECT_PARENTROTATION+1));
     stmt->setFloat(index++, GetFloatValue(GAMEOBJECT_PARENTROTATION+2));
     stmt->setFloat(index++, GetFloatValue(GAMEOBJECT_PARENTROTATION+3));
-    stmt->setInt32(index++, int32(m_respawnDelayTime));
+	if (m_ownerGUID)
+		stmt->setInt32(index++, (int32)m_respawnTime);
+	else
+		stmt->setInt32(index++, int32(m_respawnDelayTime));
     stmt->setUInt8(index++, GetGoAnimProgress());
     stmt->setUInt8(index++, uint8(GetGoState()));
     stmt->setFloat(index++, data.size);
@@ -876,6 +900,7 @@ bool GameObject::LoadGameObjectFromDB(uint32 spawnId, Map* map, bool addToMap)
     float size = data->size;
 
     m_spawnId = spawnId;
+	m_ownerGUID = data->m_ownerGUID;
     if (!Create(map->GenerateLowGuid<HighGuid::GameObject>(), entry, map, phaseMask, x, y, z, ang, rotation0, rotation1, rotation2, rotation3, animprogress, go_state, artKit, size))
         return false;
 
@@ -892,14 +917,19 @@ bool GameObject::LoadGameObjectFromDB(uint32 spawnId, Map* map, bool addToMap)
         else
         {
             m_respawnDelayTime = data->spawntimesecs;
-            m_respawnTime = GetMap()->GetGORespawnTime(m_spawnId);
+			if (this->m_ownerGUID)
+				m_respawnTime = data->spawntimesecs;
+			else
+			{
+				m_respawnTime = GetMap()->GetGORespawnTime(m_spawnId);
 
-            // ready to respawn
-            if (m_respawnTime && m_respawnTime <= time(NULL))
-            {
-                m_respawnTime = 0;
-                GetMap()->RemoveGORespawnTime(m_spawnId);
-            }
+				// ready to respawn
+				if (m_respawnTime && m_respawnTime <= time(NULL))
+				{
+					m_respawnTime = 0;
+					GetMap()->RemoveGORespawnTime(m_spawnId);
+				}
+			}
         }
     }
     else

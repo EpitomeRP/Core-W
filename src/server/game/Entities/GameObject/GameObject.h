@@ -599,7 +599,7 @@ struct GameObjectData
 {
     explicit GameObjectData() : id(0), mapid(0), phaseMask(0), posX(0.0f), posY(0.0f), posZ(0.0f), orientation(0.0f),
                                 rotation0(0.0f), rotation1(0.0f), rotation2(0.0f), rotation3(0.0f), spawntimesecs(0),
-                                animprogress(0), go_state(GO_STATE_ACTIVE), spawnMask(0), artKit(0), dbData(true), size(0.0f) { }
+                                animprogress(0), go_state(GO_STATE_ACTIVE), spawnMask(0), artKit(0), dbData(true), size(0.0f), m_ownerGUID(0){ }
     uint32 id;                                              // entry in gamobject_template
     uint16 mapid;
     uint32 phaseMask;
@@ -618,6 +618,7 @@ struct GameObjectData
     uint8 artKit;
     bool dbData;
     float size;
+	long long unsigned m_ownerGUID;
 };
 
 typedef std::vector<uint32> GameObjectQuestItemList;
@@ -849,6 +850,7 @@ class GameObject : public WorldObject, public GridObject<GameObject>, public Map
         float GetInteractionDistance();
 
         void UpdateModelPosition();
+		long long unsigned m_ownerGUID;
 
     protected:
         bool AIM_Initialize();
