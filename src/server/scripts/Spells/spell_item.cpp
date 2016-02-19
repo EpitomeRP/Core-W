@@ -2643,6 +2643,14 @@ public:
 		{
 			Player *plyr;
 			GameObject *objectPtr;
+			const GameObjectTemplate *objectInfo;
+			const Position *location;
+			Map *mapPtr;
+			float x;
+			float y;
+			float z;
+			float facing;
+			unsigned long lowGUID;
 
 			plyr = GetCaster()->ToPlayer();
 			objectPtr = 0;
@@ -2653,63 +2661,52 @@ public:
 				objectPtr->DeleteFromDB();
 				plyr->m_aptPtr = 0;
 			}
-			else
+
+			if (plyr->GetMap()->IsBattlegroundOrArena() || plyr->GetMap()->IsDungeon())
 			{
-				const GameObjectTemplate *objectInfo;
-				const Position *location;
-				Map *mapPtr;
-				float x;
-				float y;
-				float z;
-				float facing;
-				unsigned long lowGUID;
-
-				if (plyr->GetMap()->IsBattlegroundOrArena() || plyr->GetMap()->IsDungeon())
-				{
-					plyr->KillPlayer();
-					return;
-				}
-
-				objectInfo = sObjectMgr->GetGameObjectTemplate(190794);
-				if (!objectInfo)
-					return;
-
-				if (objectInfo->displayId && !sGameObjectDisplayInfoStore.LookupEntry(objectInfo->displayId))
-					return;
-
-				location = GetSpell()->m_targets.GetSrcPos();
-				if (location)
-				{
-					x = location->GetPositionX();
-					y = location->GetPositionY();
-					z = location->GetPositionZ();
-					facing = plyr->GetOrientation() - M_PI;
-				}
-				mapPtr = plyr->GetMap();
-				objectPtr = new GameObject;
-				lowGUID = mapPtr->GenerateLowGuid<HighGuid::GameObject>();
-
-				if (!objectPtr->Create(lowGUID, objectInfo->entry, mapPtr, plyr->GetPhaseMaskForSpawn(), x, y, z, facing, 0.0f, 0.0f, 0.0f, 0.0f, 0, GO_STATE_READY))
-				{
-					delete objectPtr;
-					return;
-				}
-
-				objectPtr->SetRespawnTime(0);
-				objectPtr->SaveToDB(mapPtr->GetId(), (1 << mapPtr->GetSpawnMode()), plyr->GetPhaseMaskForSpawn());
-				WorldDatabase.PExecute("UPDATE gameobject SET owner=%llu WHERE guid=%llu", GetCaster()->GetGUID(), objectPtr->GetSpawnId());
-				lowGUID = objectPtr->GetSpawnId();
-
-				delete objectPtr;
-				objectPtr = new GameObject();
-				if (!objectPtr->LoadGameObjectFromDB(lowGUID, mapPtr))
-				{
-					delete objectPtr;
-					return;
-				}
-				sObjectMgr->AddGameobjectToGrid(lowGUID, sObjectMgr->GetGOData(lowGUID));
-				plyr->m_aptPtr = objectPtr;
+				plyr->KillPlayer();
+				return;
 			}
+
+			objectInfo = sObjectMgr->GetGameObjectTemplate(190794);
+			if (!objectInfo)
+				return;
+
+			if (objectInfo->displayId && !sGameObjectDisplayInfoStore.LookupEntry(objectInfo->displayId))
+				return;
+
+			location = GetSpell()->m_targets.GetSrcPos();
+			if (location)
+			{
+				x = location->GetPositionX();
+				y = location->GetPositionY();
+				z = location->GetPositionZ();
+				facing = plyr->GetOrientation() - M_PI;
+			}
+			mapPtr = plyr->GetMap();
+			objectPtr = new GameObject;
+			lowGUID = mapPtr->GenerateLowGuid<HighGuid::GameObject>();
+
+			if (!objectPtr->Create(lowGUID, objectInfo->entry, mapPtr, plyr->GetPhaseMaskForSpawn(), x, y, z, facing, 0.0f, 0.0f, 0.0f, 0.0f, 0, GO_STATE_READY))
+			{
+				delete objectPtr;
+				return;
+			}
+
+			objectPtr->SetRespawnTime(86400);
+			objectPtr->SaveToDB(mapPtr->GetId(), (1 << mapPtr->GetSpawnMode()), plyr->GetPhaseMaskForSpawn());
+			WorldDatabase.PExecute("UPDATE gameobject SET owner=%llu WHERE guid=%llu", GetCaster()->GetGUID(), objectPtr->GetSpawnId());
+			lowGUID = objectPtr->GetSpawnId();
+
+			delete objectPtr;
+			objectPtr = new GameObject();
+			if (!objectPtr->LoadGameObjectFromDB(lowGUID, mapPtr))
+			{
+				delete objectPtr;
+				return;
+			}
+			sObjectMgr->AddGameobjectToGrid(lowGUID, sObjectMgr->GetGOData(lowGUID));
+			plyr->m_aptPtr = objectPtr;
 		}
 
 		void Register() override
