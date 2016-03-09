@@ -721,3 +721,17 @@ bool MotionMaster::GetDestination(float &x, float &y, float &z)
     z = dest.z;
     return true;
 }
+
+void MotionMaster::ComeToMeHelper(float x, float y, float z, bool walk)
+{
+	float speed;
+
+	if (walk)
+		speed = _owner->GetSpeed(MOVE_WALK);
+	else
+		speed = _owner->GetSpeed(MOVE_RUN);
+	if (_owner->GetTypeId() == TYPEID_PLAYER)
+		Mutate(new PointMovementGenerator<Player>(0, x, y, z, true, speed), MOTION_SLOT_ACTIVE);
+	else
+		Mutate(new PointMovementGenerator<Creature>(0, x, y, z, true, speed), MOTION_SLOT_ACTIVE);
+}

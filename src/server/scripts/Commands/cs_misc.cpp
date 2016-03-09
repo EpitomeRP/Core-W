@@ -2136,8 +2136,8 @@ public:
         }
 
         Player* player = handler->GetSession()->GetPlayer();
-
-        caster->GetMotionMaster()->MovePoint(0, player->GetPositionX(), player->GetPositionY(), player->GetPositionZ());
+		bool walk = !strcmp(newFlagStr, "walk");
+        caster->GetMotionMaster()->ComeToMeHelper(player->GetPositionX(), player->GetPositionY(), player->GetPositionZ(), walk);
 
         return true;
     }
