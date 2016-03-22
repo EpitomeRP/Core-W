@@ -194,6 +194,11 @@ void Creature::AddToWorld()
 #ifdef ELUNA
         sEluna->OnAddToWorld(this);
 #endif
+		if (HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNK_29) && HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE))
+		{
+			SetFlag(UNIT_FIELD_FLAGS_2, UNIT_FLAG2_FEIGN_DEATH);
+			AddUnitState(UNIT_STATE_NOT_MOVE);
+		}
     }
 }
 
@@ -328,6 +333,12 @@ bool Creature::InitEntry(uint32 entry, CreatureData const* data /*= nullptr*/)
         SetFlag(UNIT_FIELD_FLAGS_2, UNIT_FLAG2_MIRROR_IMAGE);
     else
         RemoveFlag(UNIT_FIELD_FLAGS_2, UNIT_FLAG2_MIRROR_IMAGE);
+
+	if (HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNK_29) && HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE))
+	{
+		SetFlag(UNIT_FIELD_FLAGS_2, UNIT_FLAG2_FEIGN_DEATH);
+		AddUnitState(UNIT_STATE_NOT_MOVE);
+	}
 
     CreatureModelInfo const* minfo = sObjectMgr->GetCreatureModelRandomGender(&displayID);
     if (!minfo)                                             // Cancel load if no model defined
@@ -839,6 +850,12 @@ bool Creature::Create(uint32 guidlow, Map* map, uint32 phaseMask, uint32 entry, 
     if (GetCreatureTemplate()->flags_extra & CREATURE_FLAG_EXTRA_IGNORE_PATHFINDING)
         AddUnitState(UNIT_STATE_IGNORE_PATHFINDING);
 
+	if (HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNK_29) && HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE))
+	{
+		SetFlag(UNIT_FIELD_FLAGS_2, UNIT_FLAG2_FEIGN_DEATH);
+		AddUnitState(UNIT_STATE_NOT_MOVE);
+	}
+
     return true;
 }
 
@@ -1077,6 +1094,7 @@ void Creature::SaveToDB(uint32 mapid, uint8 spawnMask, uint32 phaseMask)
     stmt->setUInt8(index++, uint8(GetDefaultMovementType()));
     stmt->setUInt32(index++, npcflag);
     stmt->setUInt32(index++, unit_flags);
+	stmt->setFloat(index++, this->GetUInt32Value(UNIT_FIELD_FLAGS_2));
     stmt->setUInt32(index++, dynamicflags);
     stmt->setFloat(index++, data.size);
     trans->Append(stmt);

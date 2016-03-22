@@ -97,6 +97,7 @@ public:
             { "unstuck",          rbac::RBAC_PERM_COMMAND_UNSTUCK,           true, &HandleUnstuckCommand,          "", NULL },
             { "wchange",          rbac::RBAC_PERM_COMMAND_WCHANGE,          false, &HandleChangeWeather,           "", NULL },
             { "mailbox",          rbac::RBAC_PERM_COMMAND_MAILBOX,          false, &HandleMailBoxCommand,          "", NULL },
+			{ "deathstate",		  rbac::RBAC_PERM_COMMAND_COMETOME,			false, &DeathStateHandler,			   "", NULL },
             { NULL,               0,                                  false, NULL,                           "", NULL }
         };
         return commandTable;
@@ -2613,6 +2614,86 @@ public:
         handler->GetSession()->SendShowMailBox(player->GetGUID());
         return true;
     }
+
+	static bool DeathStateHandler(ChatHandler *chatPtr, char const *arguments)
+	{
+		Player *plyr;
+		Unit *monsterPtr;
+		bool result;
+
+		plyr = chatPtr->GetSession()->GetPlayer();
+		monsterPtr = plyr->GetSelectedUnit();
+		result = false;
+		if (monsterPtr)
+		{
+			result = true;
+			if (arguments && *arguments)
+			{
+				if (strcmpi("ON", arguments))
+				{
+					monsterPtr->AddAura(31261, monsterPtr);
+					monsterPtr->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNK_29);
+					monsterPtr->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
+					monsterPtr->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_NPC);
+					monsterPtr->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_STUNNED);
+					monsterPtr->SetFlag(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_DEAD);
+					monsterPtr->SetFlag(UNIT_FIELD_FLAGS_2, UNIT_FLAG2_FEIGN_DEATH);
+					monsterPtr->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE);
+					monsterPtr->AddUnitState(UNIT_STATE_NOT_MOVE);
+					((Creature *)monsterPtr)->SaveToDB();
+					chatPtr->PSendSysMessage("%s set to ALWAYS DEAD.", monsterPtr->GetName().c_str());
+				}
+				else
+				{
+					monsterPtr->RemoveAura(31261, ObjectGuid::Empty, 0, AURA_REMOVE_BY_DEFAULT);
+					monsterPtr->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNK_29);
+					monsterPtr->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
+					monsterPtr->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_NPC);
+					monsterPtr->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_STUNNED);
+					monsterPtr->RemoveFlag(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_DEAD);
+					monsterPtr->RemoveFlag(UNIT_FIELD_FLAGS_2, UNIT_FLAG2_FEIGN_DEATH);
+					monsterPtr->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE);
+					monsterPtr->ClearUnitState(UNIT_STATE_NOT_MOVE);
+					((Creature *)monsterPtr)->SaveToDB();
+					chatPtr->PSendSysMessage("%s set to ALWAYS ALIVE.", monsterPtr->GetName().c_str());
+				}
+			}
+			else
+			{
+				if (monsterPtr->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNK_29))
+				{
+					if (monsterPtr->isDead())
+						((Creature *)monsterPtr)->Respawn(true);
+					monsterPtr->RemoveAura(31261, ObjectGuid::Empty, 0, AURA_REMOVE_BY_DEFAULT);
+					monsterPtr->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNK_29);
+					monsterPtr->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
+					monsterPtr->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_NPC);
+					monsterPtr->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_STUNNED);
+					monsterPtr->RemoveFlag(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_DEAD);
+					monsterPtr->RemoveFlag(UNIT_FIELD_FLAGS_2, UNIT_FLAG2_FEIGN_DEATH);
+					monsterPtr->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE);
+					monsterPtr->ClearUnitState(UNIT_STATE_NOT_MOVE);
+					((Creature *)monsterPtr)->SaveToDB();
+					chatPtr->PSendSysMessage("%s set to ALWAYS ALIVE.", monsterPtr->GetName().c_str());
+				}
+				else
+				{
+					monsterPtr->AddAura(31261, monsterPtr);
+					monsterPtr->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNK_29);
+					monsterPtr->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
+					monsterPtr->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_NPC);
+					monsterPtr->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_STUNNED);
+					monsterPtr->SetFlag(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_DEAD);
+					monsterPtr->SetFlag(UNIT_FIELD_FLAGS_2, UNIT_FLAG2_FEIGN_DEATH);
+					monsterPtr->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE);
+					monsterPtr->AddUnitState(UNIT_STATE_NOT_MOVE);
+					((Creature *)monsterPtr)->SaveToDB();
+					chatPtr->PSendSysMessage("%s set to ALWAYS DEAD.", monsterPtr->GetName().c_str());
+				}
+			}
+		}
+		return result;
+	}
 };
 
 void AddSC_misc_commandscript()
