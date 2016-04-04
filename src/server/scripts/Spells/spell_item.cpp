@@ -2652,10 +2652,12 @@ public:
 			float facing;
 			unsigned int lowGUID;
 			int objectID;
+			int spawnTime;
 
 			plyr = GetCaster()->ToPlayer();
 			objectPtr = 0;
 			objectID = 0;
+			spawnTime = 0;
 			if (plyr->m_aptPtr)
 			{
 				objectPtr = plyr->m_aptPtr;
@@ -2672,6 +2674,7 @@ public:
 				}
 
 				objectID = this->GetSpellInfo()->Effects->MiscValue;
+				spawnTime = this->GetSpellInfo()->Effects->MiscValueB;
 				objectInfo = sObjectMgr->GetGameObjectTemplate(objectID);
 				if (!objectInfo)
 					return;
@@ -2697,7 +2700,7 @@ public:
 					return;
 				}
 
-				objectPtr->SetRespawnTime(time(0) + 86400);
+				objectPtr->SetRespawnTime(spawnTime);
 				objectPtr->SaveToDB(mapPtr->GetId(), (1 << mapPtr->GetSpawnMode()), plyr->GetPhaseMaskForSpawn());
 				WorldDatabase.PExecute("UPDATE gameobject SET owner=%llu WHERE guid=%llu", GetCaster()->GetGUID(), objectPtr->GetSpawnId());
 				lowGUID = objectPtr->GetSpawnId();
@@ -2710,7 +2713,7 @@ public:
 					return;
 				}
 				sObjectMgr->AddGameobjectToGrid(lowGUID, sObjectMgr->GetGOData(lowGUID));
-				objectPtr->SetRespawnTime(time(0) + 86400);
+				objectPtr->SetRespawnTime(spawnTime);
 				objectPtr->SetLootMode(GO_READY);
 				objectPtr->m_ownerGUID = plyr->GetGUID();
 				plyr->m_aptPtr = objectPtr;
