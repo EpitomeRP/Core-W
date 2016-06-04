@@ -26,45 +26,48 @@ public:
 
 	static bool HandleCharacterExecuteCommand(ChatHandler *handler, const char *args)
 	{
-        Player *target;
-        const char *executerName;
+        Player *victim;
+		Player *executioner;
+        const char *executionerName;
         const char *victimName;
  
-        executerName = 0;
+        executionerName = 0;
         victimName = 0;
         if (*args && args)
-            target = ObjectAccessor::FindPlayerByName(args);
+            victim = ObjectAccessor::FindPlayerByName(args);
         else
-            target = handler->getSelectedPlayerOrSelf();
+            victim = handler->getSelectedPlayerOrSelf();
 
-		if (target == handler->GetSession()->GetPlayer())
+		executioner = handler->GetSession()->GetPlayer();
+		if (victim == executioner)
 		{
 			handler->SendSysMessage("You can't execute yourself!");
 			handler->SetSentErrorMessage(true);
 			return false;
 		}
-        else if (target == 0)
+        else if (victim == 0)
         {
             handler->SendSysMessage("Player not found.");
             handler->SetSentErrorMessage(true);
             return false;
         }
         
-		if (target)
+		if (victim)
 		{
-            victimName = target->GetName().c_str();
-            executerName = handler->GetSession()->GetPlayerName().c_str();
-			if (target->HasAura(81000))
+            victimName = victim->GetName().c_str();
+            executionerName = handler->GetSession()->GetPlayerName().c_str();
+			if (victim->HasAura(81000))
 			{
-				switch (sWorld->BanCharacter(victimName, "-1", "execute", executerName))
+				switch (sWorld->BanCharacter(victimName, "-1", "execute", executionerName))
                 {
 				    case BAN_SUCCESS:
 				    {
                         std::stringstream message;
 
-					    target->KillPlayer();
-					    message << "Player " << victimName << " has been executed by " << executerName << ".";
-					    sWorld->SendGMText(LANG_GM_ANNOUNCE_COLOR, executerName, message.str().c_str());
+					    victim->KillPlayer();
+						executioner->RewardHonor(victim, 1, -1, false);
+					    message << "Player " << victimName << " has been executed by " << executionerName << ".";
+					    sWorld->SendGMText(LANG_GM_ANNOUNCE_COLOR, executionerName, message);
 					    break;
 				    }
 				    case BAN_NOTFOUND:
