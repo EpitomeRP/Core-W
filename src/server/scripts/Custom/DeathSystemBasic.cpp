@@ -8,6 +8,7 @@
 #include "SpellHistory.h"
 #include "ScriptMgr.h"
 #include <sstream>
+#include "Group.h"
 
 class execute_commandscript : public CommandScript
 {
@@ -28,11 +29,15 @@ public:
 	{
         Player *victim;
 		Player *executioner;
+		Group *party;
+		uint32 numPartyMembers;
         const char *executionerName;
         const char *victimName;
  
         executionerName = 0;
         victimName = 0;
+		party = 0;
+		numPartyMembers = 1;
         if (*args && args)
             victim = ObjectAccessor::FindPlayerByName(args);
         else
@@ -56,6 +61,7 @@ public:
 		{
             victimName = victim->GetName().c_str();
             executionerName = handler->GetSession()->GetPlayerName().c_str();
+			party = executioner->GetGroup();
 			if (victim->HasAura(81000))
 			{
 				switch (sWorld->BanCharacter(victimName, "-1", "execute", executionerName))
@@ -65,9 +71,24 @@ public:
                         std::stringstream message;
 
 					    victim->KillPlayer();
-						executioner->RewardHonor(victim, 1, -1, false);
+						if (party)
+						{
+							numPartyMembers = party->GetMembersCount();
+							for (std::list<Group::MemberSlot>::const_iterator citr = party->GetMemberSlots().begin(); citr != party->GetMemberSlots().end(); ++citr)
+								if (executioner = ObjectAccessor::FindPlayer(citr->guid))
+								{
+									executioner->RewardHonor(victim, numPartyMembers, -1, false);
+									executioner->AddItem(29434, 1);
+								}
+						}
+						else
+						{
+							executioner->RewardHonor(victim, numPartyMembers, -1, false);
+							executioner->AddItem(29434, 1);
+						}
+
 					    message << "Player " << victimName << " has been executed by " << executionerName << ".";
-					    sWorld->SendGMText(LANG_GM_ANNOUNCE_COLOR, executionerName, message);
+					    sWorld->SendGMText(LANG_GM_ANNOUNCE_COLOR, executionerName, message.str().c_str());
 					    break;
 				    }
 				    case BAN_NOTFOUND:
