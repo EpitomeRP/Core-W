@@ -36,10 +36,9 @@
 #include "MMapFactory.h"
 #include "DisableMgr.h"
 #include "SpellHistory.h"
-#ifndef _WIN32
-#include <cstring>
-#define strcasecmp strcmpi
-#endif // !_WIN32
+#ifdef __linux__
+#define strcmpi strcasecmp
+#endif // __linux__
 
 
 
