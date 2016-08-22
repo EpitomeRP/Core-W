@@ -36,6 +36,11 @@
 #include "MMapFactory.h"
 #include "DisableMgr.h"
 #include "SpellHistory.h"
+#ifndef _WIN32
+#include <cstring>
+#endif // !_WIN32
+
+
 
 class misc_commandscript : public CommandScript
 {
