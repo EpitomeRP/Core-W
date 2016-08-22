@@ -709,8 +709,10 @@ void GameObject::AddUniqueUse(Player* player)
 void GameObject::Delete()
 {
 	Player *plyr;
-
-	plyr = ObjectAccessor::FindPlayer((ObjectGuid)m_ownerGUID);
+	ObjectGuid guid;
+	
+	guid.Set(m_ownerGUID);
+	plyr = ObjectAccessor::FindPlayer(guid);
 	if (plyr)
 		plyr->m_aptPtr = 0;
     SetLootState(GO_NOT_READY);
