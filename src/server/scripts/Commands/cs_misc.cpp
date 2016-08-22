@@ -38,6 +38,7 @@
 #include "SpellHistory.h"
 #ifndef _WIN32
 #include <cstring>
+#define strcasecmp strcmpi
 #endif // !_WIN32
 
 
