@@ -1225,7 +1225,7 @@ void WorldSession::HandleWorldTeleportOpcode(WorldPacket& recvData)
 {
 	int currTimeMs;
 	int worldId;
-	long long movementType;	// used for movement flag related handling shit
+	uint64 movementType;	// used for movement flag related handling shit
 	Position pos;
 	float facing;
 	
