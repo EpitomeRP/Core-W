@@ -5156,7 +5156,13 @@ Corpse* Player::CreateCorpse()
     corpse->SetUInt32Value(CORPSE_FIELD_FLAGS, flags);
     corpse->SetUInt32Value(CORPSE_FIELD_DISPLAY_ID, GetNativeDisplayId());
     corpse->SetUInt32Value(CORPSE_FIELD_GUILD, GetGuildId());
-	if ((((m_lastKillerGUID >> 52) & 0x00000FFF) == 0x00000000) && m_lastKillerGUID != this->GetGUID())
+
+/*
+	--- For future reference ---
+	Here we look at our last killer's GUID and check if the 0x00000FFF bits match 0x0, AKA 'PC' unit.
+	If they do, then our last killer was a PC. Lastly, we verify that we actually have a last killer.
+*/
+	if (((((m_lastKillerGUID >> 52) & 0x00000FFF) == 0x0) && m_lastKillerGUID != this->GetGUID()) && m_lastKillerGUID)
 	{
 		corpse->SetUInt32Value(CORPSE_FIELD_DYNAMIC_FLAGS, CORPSE_DYNFLAG_LOOTABLE);
 		corpse->lootForBody = 1;
@@ -5179,7 +5185,13 @@ Corpse* Player::CreateCorpse()
 
             _cfi = iDisplayID | (iIventoryType << 24);
             corpse->SetUInt32Value(CORPSE_FIELD_ITEM + i, _cfi);
-			if ((((m_lastKillerGUID >> 52) & 0x00000FFF) == 0x00000000) && m_lastKillerGUID != this->GetGUID())
+
+/*
+	--- For future reference ---
+	Here we look at our last killer's GUID and check if the 0x00000FFF bits match 0x0, AKA 'PC' unit.
+	If they do, then our last killer was a PC. Lastly, we verify that we actually have a last killer.
+*/
+			if (((((m_lastKillerGUID >> 52) & 0x00000FFF) == 0x0) && m_lastKillerGUID != this->GetGUID()) && m_lastKillerGUID)
 			{
 				lootstoreItem->itemid = m_items[i]->GetTemplate()->ItemId;
 				lootstoreItem->reference = 0;
@@ -5193,7 +5205,12 @@ Corpse* Player::CreateCorpse()
 			}
         }
     }
-	if ((((m_lastKillerGUID >> 52) & 0x00000FFF) == 0x00000000) && m_lastKillerGUID != this->GetGUID())
+/*
+	--- For future reference ---
+	Here we look at our last killer's GUID and check if the 0x00000FFF bits match 0x0, AKA 'PC' unit.
+	If they do, then our last killer was a PC. Lastly, we verify that we actually have a last killer.
+*/
+	if (((((m_lastKillerGUID >> 52) & 0x00000FFF) == 0x0) && m_lastKillerGUID != this->GetGUID()) && m_lastKillerGUID)
 	{
 		/* Using this variable as iterator */
 		iDisplayID = 0;

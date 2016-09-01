@@ -164,7 +164,13 @@ public:
 			if (remainingHealth <= 0 && !spellhistory->HasCooldown(SPELL_EXECUTE_CD))
 			{
 				victim->m_lastKillerGUID = attacker->GetGUID();
-				if (((victim->m_lastKillerGUID >> 52) & 0x00000FFF) == 0x00000000)
+
+/*
+	--- For future reference ---
+	Here we look at our last killer's GUID and check if the 0x00000FFF bits match 0x0, AKA 'PC' unit.
+	If they do, then our last killer was a PC. Lastly, we verify that we actually have a last killer.
+*/
+				if (((victim->m_lastKillerGUID >> 52) & 0x00000FFF) == 0x0)
 				{
 					// Cast healing spell, completely avoid damage
 					absorbAmount = dmgInfo.GetDamage();
