@@ -1005,12 +1005,22 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder* holder)
 	{
 		Field *fields = result->Fetch();
 		int mapId;
-		ObjectGuid objectGUID(fields[0].GetUInt64());
-		mapId = fields[1].GetUInt32();
-		Map *map = sMapMgr->FindMap(mapId, 0);
-		auto bounds = map->GetGameObjectBySpawnIdStore().equal_range(objectGUID);
-		if (bounds.first != bounds.second)
-			pCurrChar->m_aptPtr = bounds.first->second;
+		int numRows;
+
+		numRows = result->GetRowCount();
+		for (char i = 0; i < numRows; i++)
+		{
+			ObjectGuid objectGUID(fields[0].GetUInt64());
+			mapId = fields[1].GetUInt32();
+			Map *map = sMapMgr->FindMap(mapId, 0);
+			auto bounds = map->GetGameObjectBySpawnIdStore().equal_range(objectGUID);
+
+			if (bounds.first != bounds.second)
+				pCurrChar->m_aptPtr[i] = bounds.first->second;
+
+			result->NextRow();
+			fields = result->Fetch();
+		}
 	}
     sScriptMgr->OnPlayerLogin(pCurrChar, firstLogin);
 

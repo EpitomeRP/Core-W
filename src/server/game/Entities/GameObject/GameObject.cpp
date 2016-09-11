@@ -65,6 +65,7 @@ GameObject::GameObject() : WorldObject(false), MapObject(),
     ResetLootMode(); // restore default loot mode
     m_stationaryPosition.Relocate(0.0f, 0.0f, 0.0f, 0.0f);
 	m_ownerGUID = 0x000000;
+	m_creationTime = time(0);
 }
 
 GameObject::~GameObject()
@@ -411,7 +412,7 @@ void GameObject::Update(uint32 diff)
                 if (m_respawnTime <= now)            // timer expired
                 {
 					// If the object is created by a PC, we destroy it.
-					if (m_ownerGUID)
+					if (m_ownerGUID && ((m_respawnTime + m_creationTime) <= time(0)))
 					{
 						this->Delete();
 						this->DeleteFromDB();
@@ -714,7 +715,16 @@ void GameObject::Delete()
 	guid.Set(m_ownerGUID);
 	plyr = ObjectAccessor::FindPlayer(guid);
 	if (plyr)
-		plyr->m_aptPtr = 0;
+	{
+		for (char i = 0; i < PLAYER_MAX_APT; i++)
+		{
+			if (plyr->m_aptPtr[i] == this)
+			{
+				plyr->m_aptPtr[i] = 0;
+				break;
+			}
+		}
+	}
     SetLootState(GO_NOT_READY);
     RemoveFromOwner();
 
@@ -868,6 +878,7 @@ void GameObject::SaveToDB(uint32 mapid, uint8 spawnMask, uint32 phaseMask)
     stmt->setUInt8(index++, GetGoAnimProgress());
     stmt->setUInt8(index++, uint8(GetGoState()));
     stmt->setFloat(index++, data.size);
+	stmt->setUInt64(index++, m_creationTime);
     trans->Append(stmt);
 
     WorldDatabase.CommitTransaction(trans);
