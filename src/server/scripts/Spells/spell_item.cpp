@@ -2674,6 +2674,7 @@ public:
 					{
 						objectPtr->Delete();
 						objectPtr->DeleteFromDB();
+						objectPtr->RemoveFromWorld();
 						goto RECREATE;
 					}
 				}

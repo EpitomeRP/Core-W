@@ -412,11 +412,23 @@ void GameObject::Update(uint32 diff)
                 if (m_respawnTime <= now)            // timer expired
                 {
 					// If the object is created by a PC, we destroy it.
-					if (m_ownerGUID && ((m_respawnTime + m_creationTime) <= time(0)))
+					if (m_ownerGUID)
 					{
-						this->Delete();
-						this->DeleteFromDB();
-						return;
+						// If our respawn time is greater than 1 MILLION, then we can assume it's a timestamp and not a preset value
+						if (m_respawnTime > 10000000)
+						{
+							this->Delete();
+							this->DeleteFromDB();
+							this->RemoveFromWorld();
+							return;
+						}
+						else if ((m_respawnTime + m_creationTime) <= now)
+						{
+							this->Delete();
+							this->DeleteFromDB();
+							this->RemoveFromWorld();
+							return;
+						}
 					}
 					else
 					{
